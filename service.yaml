@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: truancy-web-svc
+spec:
+  selector:
+    app: truancy-web
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+  type: ClusterIP

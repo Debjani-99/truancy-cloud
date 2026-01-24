@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: truancy-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: truancy-web
+  template:
+    metadata:
+      labels:
+        app: truancy-web
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/debjani-99/truancy-cloud:main
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: "production"
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
