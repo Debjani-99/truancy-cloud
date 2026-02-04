@@ -1,8 +1,47 @@
-This is a Truancy Cloud [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is a Truancy Cloud a [Next.js](https://nextjs.org) (App Router) full-stack web application designed to securely manage truancy-related data for schools and courts.
+The project supports role-based access, secure authentication, and scalable cloud deployment.
 
 The project is also set up to be containerized with Docker and deployed to NRP (using Kubernetes).
 
 - **Note:** Deployment is handled separately using Docker/Kubernetes.
+
+## Tech Stack
+
+- **Frontend & Backend**
+
+  - Next.js (App Router)
+  - TypeScript
+  - Tailwind CSS (UI styling)
+
+- **Authentication & Authorization**
+
+  - Auth.js / NextAuth
+  - Credential-based login (email + password)
+  - Role-based access (RBAC) for Admin, Court, and School
+
+- **Database**
+
+  - PostgreSQL
+  - Prisma ORM
+  - Seed scripts for initial users (e.g., admin)
+ 
+- **File storage**
+  - NRP Ceph S3 (S3-compatible object storage)
+ 
+- **PDF processing**
+  - pdf-parse or pdfjs (Node libraries)
+
+- **Deployment**
+
+  - Docker (containerization)
+  - Kubernetes (NRP / Nautilus cluster)
+
+## Project Folder Structure
+
+## Environment Variables
+
+Create a .env file in the project root.
+
 
 ## One-time setup
 
@@ -99,6 +138,8 @@ To learn more about Next.js, take a look at the following resources:
 
 - [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
 - [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Auth.js / NextAuth Documentation (https://authjs.dev/)
+- Prisma Documentation (https://www.prisma.io/docs)
 
 
 
