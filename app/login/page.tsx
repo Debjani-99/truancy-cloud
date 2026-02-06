@@ -1,6 +1,7 @@
 "use client";
 
 import { signIn } from "next-auth/react";
+import { redirect } from "next/navigation";
 
 export default function LoginPage() {
   return (
@@ -46,10 +47,16 @@ export default function LoginPage() {
               </p>
 
               <button
-                onClick={() => signIn(undefined, { callbackUrl: "/dashboard" })}
+                onClick={() => redirect("/signin")}
                 className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black hover:opacity-60"
               >
                 Sign In
+              </button>
+              <button
+                onClick={() => redirect("/create-account")}
+                className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black hover:opacity-60"
+              >
+                Create an Account
               </button>
 
               <div className="mt-4 text-xs text-white/70">
