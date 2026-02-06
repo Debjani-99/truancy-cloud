@@ -21,11 +21,11 @@ export default function LoginPage() {
           
           {/* Hero text */}
           <div className="mx-auto flex max-w-lg flex-col items-center justify-center text-center">
-            <h1 className="text-3xl font-semibold leading-tight sm:text-4xl">
+            <h1 className="text-3xl font-semibold leading-tight sm:text-6xl">
               Welcome to the Truancy Cloud Portal
             </h1>
 
-            <p className="mt-3 text-xl text-white/90">
+            <p className="mt-3 text-2xl text-white/300">
               Secure county-based access for schools and courts
             </p>
 
@@ -46,7 +46,7 @@ export default function LoginPage() {
               </p>
 
               <button
-                onClick={() => signIn(undefined, { callbackUrl: "/" })}
+                onClick={() => signIn(undefined, { callbackUrl: "/dashboard" })}
                 className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black hover:opacity-60"
               >
                 Sign In
