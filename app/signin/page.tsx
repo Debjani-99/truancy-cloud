@@ -1,9 +1,22 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { redirect } from "next/navigation";
+import React, { useState } from "react"
 
-export default function LoginPage() {
+
+export default function SigninPage() {
+  const [ form, setForm ] = useState({ email: "", password: ""})
+
+  async function handleSubmit(f: React.FormEvent) {
+    f.preventDefault()
+
+    await signIn("credentials", {
+      email: form.email,
+      password: form.password,
+      callbackUrl: "/dashboard"
+    })
+  }
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-black/5 text-white">
       
@@ -46,18 +59,28 @@ export default function LoginPage() {
                 Authorized county account required
               </p>
 
-              <button
-                onClick={() => redirect("/signin")}
-                className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black hover:opacity-60"
-              >
-                Sign In
-              </button>
-              <button
-                onClick={() => redirect("/create-account")}
-                className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black hover:opacity-60"
-              >
-                Create an Account
-              </button>
+              <form onSubmit={handleSubmit}>
+                <input
+                 placeholder="Email"
+                 value={form.email}
+                 onChange={(f) => setForm({...form, email: f.target.value})}
+                 className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black hover:opacity-60"
+                />
+                <input
+                 type="password"
+                 placeholder="Password"
+                 value={form.password}
+                  onChange={(f) => setForm({...form, password: f.target.value})}
+                  className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black hover:opacity-60"
+                />
+
+                <button
+                 type="submit"
+                 className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black hover:opacity-60"
+                >
+                  Sign in
+                </button>
+              </form>
 
               <div className="mt-4 text-xs text-white/70">
                 Having trouble? Contact your county administrator.

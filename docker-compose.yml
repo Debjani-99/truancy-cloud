@@ -1,0 +1,29 @@
+services:
+  app:
+    build: .
+    container_name: app
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: "postgresql://postgres:truancycloud@localhost:5432/mydb?schema=public"
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    command: npm run dev
+
+  db:
+    image: postgres:15
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: truancycloud
+      POSTGRES_DB: mydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

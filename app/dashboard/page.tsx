@@ -1,3 +1,6 @@
+"use client"
+
+import { signOut } from "next-auth/react";
 import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
@@ -17,6 +20,12 @@ export default async function DashboardPage() {
       <p className=" text-2xl text-gray-500">
         Welcome, User
       </p>
+      <button
+        onClick={() => signOut( {callbackUrl: "/"})}
+        className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black hover:opacity-60"
+      >
+        Sign out
+      </button>
     </div>
   </main>
 );
