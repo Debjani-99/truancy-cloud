@@ -5,7 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../app/generated/prisma"
 }
 
@@ -13,31 +13,46 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  ADMIN
+  COURT
+  SCHOOL
+}
+
 model User {
-  id          String       @id @default(uuid())
-  firstName   String 
-  lastName    String
-  email       String       @unique
-  password    String      
-  role        Role 
-  countyId    String?
-  schoolId    String?
-  createdAt   DateTime     @default(now())
+  id           String   @id @default(uuid())
+  firstName    String
+  lastName     String
+  email        String   @unique
+  passwordHash String
+  role         Role
+  countyId     String?
+  schoolId     String?
+  createdAt    DateTime @default(now())
+
+  county County? @relation(fields: [countyId], references: [id], onDelete: SetNull)
+  school School? @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+
+  @@index([countyId])
+  @@index([schoolId])
 }
 
 model County {
-  id          String	   @id @default(uuid())
-  name        String       @unique
+  id   String @id @default(uuid())
+  name String @unique
+
+  schools    School[]
+  courtUsers User[] // users with role=COURT (enforced in app logic)
 }
 
 model School {
-  id          String	   @id @default(uuid())
-  name        String
-  countyID    String
-}
+  id       String @id @default(uuid())
+  name     String
+  countyId String
 
-enum Role {
-  COURT
-  SCHOOL 
-  PARENT
+  county County @relation(fields: [countyId], references: [id], onDelete: Restrict)
+  users  User[] // users with role=SCHOOL (enforced in app logic)
+
+  @@unique([countyId, name])
+  @@index([countyId])
 }
