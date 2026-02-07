@@ -25,6 +25,17 @@ model User {
   createdAt   DateTime     @default(now())
 }
 
+model County {
+  id          String	   @id @default(uuid())
+  name        String       @unique
+}
+
+model School {
+  id          String	   @id @default(uuid())
+  name        String
+  countyID    String
+}
+
 enum Role {
   COURT
   SCHOOL 
