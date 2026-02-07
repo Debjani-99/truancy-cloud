@@ -5,7 +5,7 @@ services:
     depends_on:
       - db
     environment:
-      DATABASE_URL: "postgresql://postgres:truancycloud@localhost:5432/mydb?schema=public"
+      DATABASE_URL: "postgresql://postgres:truancycloud@db:5432/mydb?schema=public"
     ports:
       - "3000:3000"
     volumes:
@@ -21,7 +21,7 @@ services:
       POSTGRES_PASSWORD: truancycloud
       POSTGRES_DB: mydb
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
