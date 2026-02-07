@@ -1,14 +1,20 @@
+
+import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+
 
 export default async function DashboardPage() {
-  // This is TEMP: it will allow UI development without auth/db
-  // Will remove this when NextAuth is ready
-  const devBypass = process.env.NODE_ENV === "development";
 
-  if (!devBypass) {
-    // When auth is ready, need to replace this with real session check
+  const session = await getServerSession(authOptions);
+
+  // TEMP behavior:
+  // - session is always null right now
+  // - so this always redirects
+  if (!session) {
     redirect("/login");
   }
+
 
   return (
   <main className="min-h-screen flex items-center justify-center bg-gray-50">

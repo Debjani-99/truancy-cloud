@@ -1,9 +1,9 @@
 export const runtime = "nodejs";
 
-import NextAuth from "next-auth";
+import NextAuth, { type NextAuthOptions } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
-const handler = NextAuth({
+export const authOptions: NextAuthOptions = {
   // Minimal provider so NextAuth initializes cleanly.
   // This does NOT log anyone in yet (authorize returns null).
   providers: [
@@ -21,6 +21,8 @@ const handler = NextAuth({
   ],
 
   session: { strategy: "jwt" },
-});
+};
+
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };
