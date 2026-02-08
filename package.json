@@ -18,6 +18,9 @@
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
+  },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/bcrypt": "^6.0.0",
