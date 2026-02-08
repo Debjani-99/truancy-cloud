@@ -1,30 +1,40 @@
+"use client";
 
-import { getServerSession } from "next-auth";
+import { useSession, signOut } from "next-auth/react";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
+export default function DashboardPage() {
+  const { data: session, status } = useSession();
 
-export default async function DashboardPage() {
+  if (status === "loading") {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-gray-500">Loading...</p>
+      </main>
+    );
+  }
 
-  const session = await getServerSession(authOptions);
-
-  // TEMP behavior:
-  // - session is always null right now
-  // - so this always redirects
   if (!session) {
     redirect("/login");
   }
 
-
   return (
-  <main className="min-h-screen flex items-center justify-center bg-gray-50">
-    <div className="p-8 rounded-lg shadow-md bg-white text-center">
-      <h1 className="text-8xl font-bold mb-2 text-blue-300">Dashboard</h1>
-      <p className=" text-2xl text-gray-500">
-        Welcome, User
-      </p>
-    </div>
-  </main>
-);
-
+    <main className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="p-8 rounded-lg shadow-md bg-white text-center">
+        <h1 className="text-4xl font-bold mb-2 text-blue-400">Dashboard</h1>
+        <p className="text-xl text-gray-700">
+          Welcome, {session.user.name ?? session.user.email}
+        </p>
+        <p className="mt-1 text-sm text-gray-500">
+          Role: {session.user.role}
+        </p>
+        <button
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          className="mt-6 rounded-lg bg-gray-800 px-6 py-2 text-sm font-semibold text-white hover:bg-gray-700"
+        >
+          Sign out
+        </button>
+      </div>
+    </main>
+  );
 }
