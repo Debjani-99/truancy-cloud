@@ -62,22 +62,38 @@ async function main() {
 
   // Seed school user (scoped to Urbana High School)
   await prisma.user.upsert({
-    where: { email: "school@secondbell.dev" },
+    where: { email: "urbana_school@secondbell.dev" },
     update: {},
     create: {
-      firstName: "School",
+      firstName: "Urbana High School",
       lastName: "Admin",
-      email: "school@secondbell.dev",
+      email: "urbana_school@secondbell.dev",
       passwordHash,
       role: "SCHOOL",
       schoolId: urbana.id,
     },
   });
 
+  // Seed school user (scoped to Graham High School)
+  await prisma.user.upsert({
+    where: { email: "graham_school@secondbell.dev" },
+    update: {},
+    create: {
+      firstName: "Graham High School",
+      lastName: "Admin",
+      email: "graham_school@secondbell.dev",
+      passwordHash,
+      role: "SCHOOL",
+      schoolId: graham.id,
+    },
+  });
+
   console.log("Seed complete:");
   console.log("  County: Champaign County");
   console.log("  Schools: Urbana High School, Graham High School");
-  console.log("  Users: admin@secondbell.dev, court@secondbell.dev, school@secondbell.dev");
+  console.log(
+    "  Users: admin@secondbell.dev, court@secondbell.dev, urbana_school@secondbell.dev, graham_school@secondbell.dev"
+  );
   console.log("  Password for all: password123");
 }
 
