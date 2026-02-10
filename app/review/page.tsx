@@ -1,12 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 type Role = "SCHOOL" | "COURT" | "ADMIN";
 
 export default function ReviewPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen flex items-center justify-center bg-gray-50">
+          <p className="text-gray-500">Loading...</p>
+        </main>
+      }
+    >
+      <ReviewInner />
+    </Suspense>
+  );
+}
+
+function ReviewInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const schoolId = searchParams.get("schoolId");
@@ -14,7 +28,6 @@ export default function ReviewPage() {
   const { data: session, status } = useSession();
   const [schoolName, setSchoolName] = useState<string | null>(null);
 
-  // Guard: COURT/ADMIN only
   useEffect(() => {
     if (status === "unauthenticated") {
       router.replace("/login");
@@ -22,11 +35,10 @@ export default function ReviewPage() {
     }
     if (status === "authenticated") {
       const role = session?.user?.role as Role | undefined;
-      if (role && role === "SCHOOL") router.replace("/dashboard");
+      if (role === "SCHOOL") router.replace("/dashboard");
     }
   }, [status, session, router]);
 
-  // Load school name (nice UI)
   useEffect(() => {
     const load = async () => {
       if (!schoolId) return;
@@ -77,7 +89,6 @@ export default function ReviewPage() {
             </button>
           </div>
 
-          {/* Demo 1 placeholder */}
           <div className="mt-6 rounded-lg border bg-gray-50 p-6">
             <p className="text-sm text-gray-700">
               Demo 1: This page will list uploaded PDFs for the selected school
