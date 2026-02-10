@@ -50,9 +50,35 @@ model School {
   name     String
   countyId String
 
-  county County @relation(fields: [countyId], references: [id], onDelete: Restrict)
-  users  User[] // users with role=SCHOOL (enforced in app logic)
+  county  County   @relation(fields: [countyId], references: [id], onDelete: Restrict)
+  users   User[]   // users with role=SCHOOL (enforced in app logic)
+  uploads Upload[]
 
   @@unique([countyId, name])
   @@index([countyId])
+}
+
+enum UploadStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REQUIRES_REVIEW
+}
+
+model Upload {
+  id           String       @id @default(uuid())
+  filename     String
+  storageKey   String
+  fileSize     Int
+  mimeType     String
+  status       UploadStatus @default(PENDING)
+  schoolId     String
+  uploadedBy   String
+  uploadedAt   DateTime     @default(now())
+  errorMessage String?
+
+  school School @relation(fields: [schoolId], references: [id])
+
+  @@index([schoolId])
 }
