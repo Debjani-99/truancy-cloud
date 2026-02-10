@@ -5,6 +5,15 @@ The project is also set up to be containerized with Docker and deployed to NRP (
 
 - **Note:** Deployment is handled separately using Docker/Kubernetes.
 
+## Core Features
+
+- Secure login using email + password
+- Role-based access control (ADMIN, COURT, SCHOOL)
+- Session includes role and scope (county/school)
+- County-scoped data access for court users
+- Server-side route protection for authenticated pages
+- Scalable architecture
+
 ## Tech Stack
 
 - **Frontend & Backend**
@@ -18,12 +27,16 @@ The project is also set up to be containerized with Docker and deployed to NRP (
   - Auth.js / NextAuth
   - Credential-based login (email + password)
   - Role-based access (RBAC) for Admin, Court, and School
+  - JWT-based sessions
+  - Session scoping:
+    - countyId for COURT users
+    - schoolId for SCHOOL users
 
 - **Database**
 
   - PostgreSQL
   - Prisma ORM
-  - Seed scripts for initial users (e.g., admin)
+  - Seed scripts for initial users (Admin, Court, School)
  
 - **File storage**
   - NRP Ceph S3 (S3-compatible object storage)
@@ -35,12 +48,46 @@ The project is also set up to be containerized with Docker and deployed to NRP (
 
   - Docker (containerization)
   - Kubernetes (NRP / Nautilus cluster)
+ 
+## Authentication & Access Control Details
+
+- When a user logs in:
+  - Their session includes:
+  - id
+  - email
+  - firstName
+  - lastName
+  - role
+  - countyId (COURT users)
+  - schoolId (SCHOOL users)
+- This session data is available via:
+  - useSession() (client)
+  - getServerSession() (server)
+  - /api/auth/session
+
+
+## Role Enforcement
+
+- Logged-out users are redirected to /login
+- Logged-in users with the wrong role are blocked from protected pages
+- Access is enforced at the page and API level, not just the UI
+
 
 ## Project Folder Structure
+
+app/
+
 
 ## Environment Variables
 
 Create a .env file in the project root.
+
+```bash
+DATABASE_URL=postgresql://postgres:truancycloud@127.0.0.1:5433/mydb?schema=public
+NEXTAUTH_SECRET=change-me-to-a-random-string
+NEXTAUTH_URL=http://localhost:3000
+```
+
 
 
 ## One-time setup
