@@ -46,7 +46,6 @@ export default function DashboardPage() {
   }, [status, router]);
 
   const role = (session?.user?.role ?? null) as Role | null;
-
   const displayName = session?.user?.name ?? session?.user?.email ?? "User";
 
   // Load county/school name
@@ -129,6 +128,64 @@ export default function DashboardPage() {
 
   if (!session) return null;
 
+  // SCHOOL: hero landing layout
+  if (role === "SCHOOL") {
+    return (
+      <main className="min-h-screen bg-[#f7f5f2] relative overflow-hidden">
+        {/* Decorative side wave-ish accent */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br top-0 h-full w-[35%] opacity-60">
+          <div className="pointer-events-none absolute -right-40 -top-40 h-[520px] w-[520px] rounded-full bg-sky-200/40 blur-3xl" />
+          <div className="absolute right-[-140px] top-[240px] h-[520px] w-[520px] rounded-full bg-indigo-250 blur-3xl" />
+        </div>
+
+        {/* Top bar: small corner button(s) */}
+        <div className="absolute top-6 right-6 flex items-center gap-3">
+          <button
+            onClick={() => router.push("/upload")}
+            className="rounded-md border border-gray-900/30 bg-white px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50 transition"
+          >
+            Upload
+          </button>
+
+          <button
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 transition"
+          >
+            Logout
+          </button>
+        </div>
+
+        {/* Center hero */}
+        <section className="min-h-screen flex items-center justify-center px-6">
+          <div className="w-full max-w-3xl text-center">
+            <p className="mt-4 text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900">
+              {scopeLabel}
+            </p>
+
+
+            <p className="mt-4 text-base sm:text-lg text-gray-700">
+              Submit your school’s reports securely for court review. PDF only.
+            </p>
+
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <button
+                onClick={() => router.push("/upload")}
+                className="inline-flex items-center justify-center rounded-md bg-white px-6 py-3 text-sm font-semibold text-gray-900 border border-gray-900/30 hover:bg-gray-50 transition"
+              >
+                Upload Now
+              </button>
+            </div>
+
+            <p className="mt-8 text-sm text-gray-800">
+              Signed in as <span className="font-semibold">{displayName}</span>
+            </p>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  // COURT + ADMIN 
   return (
     <main className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -164,17 +221,6 @@ export default function DashboardPage() {
             {displayName}
           </p>
         </div>
-
-        {/* SCHOOL view */}
-        {role === "SCHOOL" && (
-          <div className="mt-6 grid gap-6 md:grid-cols-2">
-            <Card
-              title="Upload PDFs"
-              subtitle="Submit truancy reports for your school."
-              onClick={() => router.push("/upload")}
-            />
-          </div>
-        )}
 
         {/* COURT view */}
         {role === "COURT" && (
@@ -215,13 +261,18 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* ADMIN view (optional placeholder) */}
+        {/* ADMIN view */}
         {role === "ADMIN" && (
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             <Card
-              title="Review PDFs"
-              subtitle="Admin review view (all scope)."
-              onClick={() => router.push("/review")}
+              title="Schools"
+              subtitle="Browse all schools and review uploads by school."
+              onClick={() => router.push("/admin/schools")}
+            />
+            <Card
+              title="Courts"
+              subtitle="Browse all courts and their schools."
+              onClick={() => router.push("/admin/courts")}
             />
           </div>
         )}
