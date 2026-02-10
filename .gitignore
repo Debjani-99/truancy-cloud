@@ -34,6 +34,9 @@ yarn-error.log*
 .env*
 !.env.example
 
+# local pdf uploads (swap to S3 in production)
+/uploads
+
 # vercel
 .vercel
 
