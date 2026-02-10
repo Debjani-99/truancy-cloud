@@ -75,7 +75,41 @@ The project is also set up to be containerized with Docker and deployed to NRP (
 
 ## Project Folder Structure
 
-app/
+**app/**  : Top level view
+
+- **app/page.tsx**: Landing / entry page.
+- **app/layout.tsx**: Global layout (wrapper for all pages).
+- **app/globals.css**: Global styles.
+- **app/session-wrapper.tsx**: Client-side session provider (NextAuth).
+
+**admin/**  : Admin-only pages (courts, schools, and admin dashboards)
+
+- Courts/page.tsx
+  - countyID/page.tsx
+- schools/page.tsx
+
+**api/**  : Backend API routes used by the frontend
+
+- **auth/[nextAuth]/route.ts**  : Handles authentication (login, logout, sessions) using Auth.js / NextAuth.
+- **counties/routes.ts**  : Returns the list of counties (used by admin and court views).
+  - **counties/[ID]/route.ts**  : Fetches details for a specific county by ID.
+    - **counties/[ID]/schools/route.ts**  : Returns all schools belonging to a specific county.
+- **reports/upload/route.ts**  : Handles PDF uploads and stores report metadata (S3 + database).
+- **schools/route.ts**  : Returns the list of schools (used by admin and selection views).
+  - **schools/[ID]/route.ts**  : Fetches details for a specific school by ID.
+ 
+**Dashboard/**  : 
+
+- page.tsx
+
+**login/**  :
+
+- page.tsx
+
+**review/**
+**upload/**
+**prisma/**
+
 
 
 ## Environment Variables
