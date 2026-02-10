@@ -1,5 +1,4 @@
 // pdf file upload UI (drag & drop)
-
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -16,6 +15,7 @@ export default function UploadPage() {
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -38,7 +38,9 @@ export default function UploadPage() {
     setSuccess(null);
 
     const isPdf =
-      file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+      file.type === "application/pdf" ||
+      file.name.toLowerCase().endsWith(".pdf");
+
     if (!isPdf) {
       setError("Please upload a PDF file only.");
       return false;
@@ -95,7 +97,7 @@ export default function UploadPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // Demo-ready: UI-only "upload" (replace with real API later)
+  // Real upload -> hits backend API
   const onUpload = async () => {
     setError(null);
     setSuccess(null);
@@ -105,11 +107,31 @@ export default function UploadPage() {
       return;
     }
 
-    // Placeholder for future: POST to /api/uploads or S3 presigned URL
-    await new Promise((r) => setTimeout(r, 600));
-    setSuccess("Upload successful (demo). Your PDF is ready for review.");
-    setSelectedFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    setIsUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", selectedFile);
+
+      const res = await fetch("/api/reports/upload", {
+        method: "POST",
+        body: form,
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setError(data?.error ?? "Upload failed.");
+        return;
+      }
+
+      setSuccess(`Upload successful. Received: ${data.filename ?? "PDF"}`);
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch {
+      setError("Upload failed. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   if (status === "loading") {
@@ -126,8 +148,8 @@ export default function UploadPage() {
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-10">
       <div className="mx-auto w-full max-w-2xl">
-        {/* Header */}
         <div className="rounded-xl border bg-white p-8 shadow-sm">
+          {/* Header */}
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Upload PDF</h1>
@@ -232,14 +254,15 @@ export default function UploadPage() {
             <button
               onClick={onUpload}
               className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition disabled:opacity-60"
-              disabled={!selectedFile}
+              disabled={!selectedFile || isUploading}
             >
-              Upload PDF
+              {isUploading ? "Uploading..." : "Upload PDF"}
             </button>
 
             <button
               onClick={onBrowseClick}
               className="w-full rounded-md border px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+              disabled={isUploading}
             >
               Choose File
             </button>
