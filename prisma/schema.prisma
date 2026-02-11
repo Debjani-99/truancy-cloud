@@ -30,8 +30,9 @@ model User {
   schoolId     String?
   createdAt    DateTime @default(now())
 
-  county County? @relation(fields: [countyId], references: [id], onDelete: SetNull)
-  school School? @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  county  County?  @relation(fields: [countyId], references: [id], onDelete: SetNull)
+  school  School?  @relation(fields: [schoolId], references: [id], onDelete: SetNull)
+  uploads Upload[]
 
   @@index([countyId])
   @@index([schoolId])
@@ -74,11 +75,13 @@ model Upload {
   mimeType     String
   status       UploadStatus @default(PENDING)
   schoolId     String
-  uploadedBy   String
+  uploadedById String
   uploadedAt   DateTime     @default(now())
   errorMessage String?
 
-  school School @relation(fields: [schoolId], references: [id])
+  school     School @relation(fields: [schoolId], references: [id])
+  uploadedBy User   @relation(fields: [uploadedById], references: [id])
 
   @@index([schoolId])
+  @@index([uploadedById])
 }
