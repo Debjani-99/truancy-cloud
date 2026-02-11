@@ -117,7 +117,7 @@ export async function GET(
   try {
     const bytes = await readBytes(upload.storageKey);
 
-    return new NextResponse(bytes, {
+    return new NextResponse(Buffer.from(bytes), {
       status: 200,
       headers: {
         "Content-Type": upload.mimeType || "application/pdf",
