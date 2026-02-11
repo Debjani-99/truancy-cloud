@@ -1,3 +1,7 @@
+
+// for /api/uploads/[id]/file (404/403/200)
+
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { readFile } from "fs/promises";
 
@@ -95,7 +99,7 @@ describe("GET /api/uploads/[id]/file (regression suite)", () => {
   // Ensures authorized users (e.g., ADMIN) can successfully retrieve a file.
   // Protects against accidental changes that block valid access.
 
-  
+
   it("returns 200 and streams file for ADMIN", async () => {
     (requireAuth as any).mockResolvedValue({
       session: { user: { role: "ADMIN" } },
