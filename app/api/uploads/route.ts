@@ -43,6 +43,15 @@ export async function POST(req: NextRequest) {
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
+
+  // Validate PDF magic bytes
+  if (buffer.length < 4 || buffer.toString("ascii", 0, 4) !== "%PDF") {
+    return NextResponse.json(
+      { error: "File does not appear to be a valid PDF" },
+      { status: 400 }
+    );
+  }
+
   const storageKey = await uploadFile(buffer, schoolId, file.name);
 
   const upload = await prisma.upload.create({
@@ -51,8 +60,16 @@ export async function POST(req: NextRequest) {
       storageKey,
       fileSize: file.size,
       mimeType: file.type,
-      schoolId,
-      uploadedBy: auth.session.user.id,
+      school: { connect: { id: schoolId } },
+      uploadedBy: { connect: { id: auth.session.user.id } },
+    },
+    select: {
+      id: true,
+      filename: true,
+      fileSize: true,
+      status: true,
+      uploadedAt: true,
+      school: { select: { id: true, name: true } },
     },
   });
 
