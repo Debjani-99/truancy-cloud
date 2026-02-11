@@ -84,9 +84,9 @@ The project is also set up to be containerized with Docker and deployed to NRP (
 
 **admin/**  : Admin-only pages (courts, schools, and admin dashboards)
 
-- Courts/page.tsx
-  - countyID/page.tsx
-- schools/page.tsx
+- **Courts/page.tsx** : 
+  - **countyID/page.tsx** : 
+- **schools/page.tsx**
 
 **api/**  : Backend API routes used by the frontend
 

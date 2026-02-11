@@ -7,6 +7,27 @@ import { useSession } from "next-auth/react";
 
 type Role = "SCHOOL" | "COURT" | "ADMIN";
 
+type UploadRow = {
+  id: string;
+  filename: string;
+  fileSize: number;
+  status: string;
+  uploadedAt: string; // ISO string
+};
+
+const formatBytes = (bytes: number) => {
+  if (!Number.isFinite(bytes)) return "-";
+  const mb = bytes / (1024 * 1024);
+  if (mb >= 1) return `${mb.toFixed(2)} MB`;
+  const kb = bytes / 1024;
+  return `${kb.toFixed(1)} KB`;
+};
+
+const formatDate = (iso: string) => {
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? iso : d.toLocaleString();
+};
+
 export default function UploadPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -19,6 +40,24 @@ export default function UploadPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const [history, setHistory] = useState<UploadRow[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  const loadHistory = async () => {
+    setIsLoadingHistory(true);
+    try {
+      const res = await fetch("/api/uploads", { method: "GET" });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setHistory((data?.uploads ?? []) as UploadRow[]);
+      } else {
+        // setError(data?.error ?? "Failed to load upload history.");
+      }
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
   // Guard: only SCHOOL can access /upload
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -29,8 +68,14 @@ export default function UploadPage() {
       const role = session?.user?.role as Role | undefined;
       if (role && role !== "SCHOOL") {
         router.replace("/dashboard");
+        return;
+      }
+      // If SCHOOL, load history once after login
+      if (role === "SCHOOL") {
+        loadHistory();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, session, router]);
 
   const validatePdf = (file: File) => {
@@ -112,7 +157,7 @@ export default function UploadPage() {
       const form = new FormData();
       form.append("file", selectedFile);
 
-      const res = await fetch("/api/reports/upload", {
+      const res = await fetch("/api/uploads", {
         method: "POST",
         body: form,
       });
@@ -124,9 +169,15 @@ export default function UploadPage() {
         return;
       }
 
-      setSuccess(`Upload successful. Received: ${data.filename ?? "PDF"}`);
+      // /api/uploads returns { upload: { filename: ... } }
+      const returnedName = data?.upload?.filename ?? selectedFile.name;
+
+      setSuccess(`Upload successful. Received: ${returnedName}`);
       setSelectedFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
+
+      // refresh history after upload
+      await loadHistory();
     } catch {
       setError("Upload failed. Please try again.");
     } finally {
@@ -266,6 +317,59 @@ export default function UploadPage() {
             >
               Choose File
             </button>
+          </div>
+
+          {/* Upload history */}
+          <div className="mt-8">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-900">
+                Upload History
+              </h2>
+              <button
+                onClick={loadHistory}
+                className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+                disabled={isLoadingHistory}
+              >
+                {isLoadingHistory ? "Refreshing..." : "Refresh"}
+              </button>
+            </div>
+
+            <div className="mt-3 overflow-hidden rounded-lg border bg-white">
+              {isLoadingHistory ? (
+                <div className="p-4 text-sm text-gray-600">
+                  Loading uploads...
+                </div>
+              ) : history.length === 0 ? (
+                <div className="p-4 text-sm text-gray-600">No uploads yet.</div>
+              ) : (
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-gray-50 text-gray-600">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">File</th>
+                      <th className="px-4 py-3 font-medium">Size</th>
+                      <th className="px-4 py-3 font-medium">Uploaded</th>
+                      <th className="px-4 py-3 font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {history.map((u) => (
+                      <tr key={u.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-gray-900">
+                          {u.filename}
+                        </td>
+                        <td className="px-4 py-3 text-gray-700">
+                          {formatBytes(u.fileSize)}
+                        </td>
+                        <td className="px-4 py-3 text-gray-700">
+                          {formatDate(u.uploadedAt)}
+                        </td>
+                        <td className="px-4 py-3 text-gray-700">{u.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </div>
         </div>
       </div>
