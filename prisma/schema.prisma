@@ -59,13 +59,14 @@ model School {
   @@index([countyId])
 }
 
+
 enum UploadStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
-  REQUIRES_REVIEW
-}
+  PENDING          // Uploaded, not yet extracted
+  PROCESSING       // Court triggered extraction
+  PARSED           // Successfully parsed + data inserted
+  FAILED           // Parsing failed
+  REVIEW          // Need data calculation
+} 
 
 model Upload {
   id           String       @id @default(uuid())
