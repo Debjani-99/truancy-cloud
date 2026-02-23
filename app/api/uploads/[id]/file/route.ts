@@ -9,17 +9,33 @@ import { requireAuth } from "@/lib/auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Handles both:
+// - AsyncIterable<Uint8Array> (Node streams)
+// - Web ReadableStream<Uint8Array>
 async function streamToBuffer(
-    stream: AsyncIterable<Uint8Array> | NodeJS.ReadableStream
-  ): Promise<Buffer> {
-    const chunks: Buffer[] = [];
+  stream: AsyncIterable<Uint8Array> | ReadableStream<Uint8Array>
+): Promise<Buffer> {
+  // Web ReadableStream path
+  if (typeof (stream as ReadableStream<Uint8Array>).getReader === "function") {
+    const reader = (stream as ReadableStream<Uint8Array>).getReader();
+    const parts: Uint8Array[] = [];
 
-    for await (const chunk of stream as AsyncIterable<Uint8Array>) {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) parts.push(value);
     }
 
-    return Buffer.concat(chunks);
+    return Buffer.concat(parts.map((p) => Buffer.from(p)));
   }
+
+  // AsyncIterable path (Node stream)
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream as AsyncIterable<Uint8Array>) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
+}
 
 function s3Enabled() {
   return (
@@ -69,7 +85,24 @@ async function readBytes(storageKey: string): Promise<Uint8Array> {
 
     if (!obj.Body) throw new Error("Empty S3 object body");
 
-    const buf = await streamToBuffer(obj.Body);
+    const body = obj.Body as any;
+
+    //Best path: AWS SDK v3 SdkStreamMixin helper
+    if (typeof body.transformToByteArray === "function") {
+      const bytes = await body.transformToByteArray(); // Uint8Array
+      return new Uint8Array(bytes);
+    }
+
+    // Fallback: Blob
+    if (typeof Blob !== "undefined" && body instanceof Blob) {
+      const ab = await body.arrayBuffer();
+      return new Uint8Array(ab);
+    }
+
+    // Fallback: stream conversion
+    const buf = await streamToBuffer(
+      body as AsyncIterable<Uint8Array> | ReadableStream<Uint8Array>
+    );
     return new Uint8Array(buf);
   }
 
@@ -118,6 +151,11 @@ export async function GET(
     }
   }
 
+  // Optional guardrail
+  if (!upload.storageKey) {
+    return NextResponse.json({ error: "File not available" }, { status: 409 });
+  }
+
   try {
     const bytes = await readBytes(upload.storageKey);
 
@@ -129,7 +167,8 @@ export async function GET(
         "Cache-Control": "no-store",
       },
     });
-  } catch {
+  } catch (err) {
+    console.error("GET /api/uploads/[id]/file failed:", err);
     return NextResponse.json({ error: "Failed to load file" }, { status: 500 });
   }
 }
