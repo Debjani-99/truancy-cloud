@@ -9,9 +9,9 @@ import { requireAuth } from "@/lib/auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function streamToBuffer(stream: any): Promise<Buffer> {
+async function streamToBuffer(stream: unknown): Promise<Buffer> {
   const chunks: Buffer[] = [];
-  for await (const chunk of stream as AsyncIterable<any>) {
+  for await (const chunk of stream as AsyncIterable<unknown>) {
     chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
   }
   return Buffer.concat(chunks);
