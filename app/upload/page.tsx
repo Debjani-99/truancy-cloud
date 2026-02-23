@@ -163,10 +163,16 @@ export default function UploadPage() {
       });
 
       const data = await res.json().catch(() => ({}));
-
+      
       if (!res.ok) {
-        setError(data?.error ?? "Upload failed.");
-        return;
+        const msg =
+          data?.error?.message || // new shape: { error: { message } }
+          data?.error ||          // old shape: { error: "..." }
+          "Upload failed.";
+
+        setError(msg);
+        setSuccess(null);
+        return; // stops success path 
       }
 
       // /api/uploads returns { upload: { filename: ... } }

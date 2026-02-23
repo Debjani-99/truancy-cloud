@@ -12,20 +12,27 @@ export async function POST(req: NextRequest) {
   const { schoolId } = auth.session.user;
 
   if (!schoolId) {
+    return NextResponse.json({ error: "No school assigned" }, { status: 400 });
+  }
+
+  let formData: FormData;
+  try {
+    formData = await req.formData();
+  } catch (err) {
+    console.error("POST /api/uploads formData parse failed:", err);
     return NextResponse.json(
-      { error: "No school assigned" },
+      {
+        error: "Invalid upload form data.",
+        errorDetails: { code: "BAD_FORMDATA" },
+      },
       { status: 400 }
     );
   }
 
-  const formData = await req.formData();
   const file = formData.get("file");
 
   if (!file || !(file instanceof File)) {
-    return NextResponse.json(
-      { error: "No file provided" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "No file provided" }, { status: 400 });
   }
 
   if (file.type !== "application/pdf") {
@@ -52,28 +59,43 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const storageKey = await uploadFile(buffer, schoolId, file.name);
+  try {
+    // 1) Storage upload (Ceph/S3/local)
+    const storageKey = await uploadFile(buffer, schoolId, file.name);
 
-  const upload = await prisma.upload.create({
-    data: {
-      filename: file.name,
-      storageKey,
-      fileSize: file.size,
-      mimeType: file.type,
-      school: { connect: { id: schoolId } },
-      uploadedBy: { connect: { id: auth.session.user.id } },
-    },
-    select: {
-      id: true,
-      filename: true,
-      fileSize: true,
-      status: true,
-      uploadedAt: true,
-      school: { select: { id: true, name: true } },
-    },
-  });
+    // 2) DB record create (only after upload succeeds)
+    const upload = await prisma.upload.create({
+      data: {
+        filename: file.name,
+        storageKey,
+        fileSize: file.size,
+        mimeType: file.type,
+        school: { connect: { id: schoolId } },
+        uploadedBy: { connect: { id: auth.session.user.id } },
+      },
+      select: {
+        id: true,
+        filename: true,
+        fileSize: true,
+        status: true,
+        uploadedAt: true,
+        school: { select: { id: true, name: true } },
+      },
+    });
 
-  return NextResponse.json({ upload }, { status: 201 });
+    return NextResponse.json({ upload }, { status: 201 });
+  } catch (err) {
+    console.error("POST /api/uploads failed:", err);
+
+    const message = "Upload failed. Please try again.";
+    return NextResponse.json(
+      {
+        error: message,
+        errorDetails: { code: "UPLOAD_FAILED", message },
+      },
+      { status: 500 }
+    );
+  }
 }
 
 export async function GET() {
@@ -82,7 +104,7 @@ export async function GET() {
 
   const { role, schoolId, countyId } = auth.session.user;
 
-  let where = {};
+  let where: any = {};
 
   if (role === "SCHOOL") {
     where = { schoolId };
