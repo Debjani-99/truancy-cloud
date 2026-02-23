@@ -9,13 +9,17 @@ import { requireAuth } from "@/lib/auth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-async function streamToBuffer(stream: unknown): Promise<Buffer> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream as AsyncIterable<unknown>) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+async function streamToBuffer(
+    stream: AsyncIterable<Uint8Array> | NodeJS.ReadableStream
+  ): Promise<Buffer> {
+    const chunks: Buffer[] = [];
+
+    for await (const chunk of stream as AsyncIterable<Uint8Array>) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+
+    return Buffer.concat(chunks);
   }
-  return Buffer.concat(chunks);
-}
 
 function s3Enabled() {
   return (
