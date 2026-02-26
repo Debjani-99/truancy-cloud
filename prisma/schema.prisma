@@ -39,26 +39,68 @@ model User {
 }
 
 model County {
-  id   String @id @default(uuid())
-  name String @unique
+  id          String @id @default(uuid())
+  name        String @unique
 
   schools    School[]
   courtUsers User[] // users with role=COURT (enforced in app logic)
 }
 
 model School {
-  id       String @id @default(uuid())
-  name     String
-  countyId String
+  id          String @id @default(uuid())
+  name        String
+  countyId    String
 
   county  County   @relation(fields: [countyId], references: [id], onDelete: Restrict)
   users   User[]   // users with role=SCHOOL (enforced in app logic)
   uploads Upload[]
+  students Student[]
+  attendanceReports AttendanceReport[]
 
   @@unique([countyId, name])
   @@index([countyId])
 }
 
+model Student {
+  id          Int @id @default(autoincrement())
+  schoolId    String
+  studentRef  String?
+  firstName   String
+  lastName    String
+  createdAt   DateTime @default(now())
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+
+  records AttendanceRecord[]
+}
+
+model AttendanceReport {
+  id          Int @id @default(autoincrement())
+  uploadId    String @unique
+  schoolId    String
+  schoolYear  String
+  createdAt   DateTime    @default(now())
+
+  upload Upload @relation(fields: [uploadId], references: [id], onDelete: Restrict) 
+  school School @relation(fields: [schoolId], references: [id], onDelete: Restrict)
+
+  records AttendanceRecord[]
+}
+
+model AttendanceRecord {
+  id                    Int @id @default(autoincrement())
+  reportId              Int
+  studentId             Int
+  excusedHours          Float
+  unexcusedHours        Float
+  medicalExcusedHours   Float
+  suspensionHours       Float
+  totalAbsHours         Float
+  addedHours            Float //Added weekly hours (this week - last week)
+
+  report AttendanceReport @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
+}
 
 enum UploadStatus {
   PENDING          // Uploaded, not yet extracted
@@ -82,6 +124,8 @@ model Upload {
 
   school     School @relation(fields: [schoolId], references: [id])
   uploadedBy User   @relation(fields: [uploadedById], references: [id])
+
+  report     AttendanceReport?
 
   @@index([schoolId])
   @@index([uploadedById])
