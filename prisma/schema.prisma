@@ -72,6 +72,9 @@ model Student {
   school School @relation(fields: [schoolId], references: [id], onDelete: Restrict)
 
   records AttendanceRecord[]
+
+  @@unique([schoolId, studentRef])
+  @@index([schoolId, lastName, firstName])
 }
 
 model AttendanceReport {
@@ -91,15 +94,19 @@ model AttendanceRecord {
   id                    Int @id @default(autoincrement())
   reportId              Int
   studentId             Int
-  excusedHours          Float
-  unexcusedHours        Float
-  medicalExcusedHours   Float
-  suspensionHours       Float
-  totalAbsHours         Float
-  addedHours            Float //Added weekly hours (this week - last week)
+  excusedHours          Float @default(0)
+  unexcusedHours        Float @default(0)
+  medicalExcusedHours   Float @default(0)
+  suspensionHours       Float @default(0)
+  totalAbsHours         Float @default(0)
+  addedHours            Float @default(0) //Added weekly hours (this week - last week)
 
   report AttendanceReport @relation(fields: [reportId], references: [id], onDelete: Restrict)
   student Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  
+  @@unique([reportId, studentId])
+  @@index([reportId])
+  @@index([studentId])
 }
 
 enum UploadStatus {
