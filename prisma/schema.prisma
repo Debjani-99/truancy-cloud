@@ -94,6 +94,7 @@ model AttendanceRecord {
   id                    Int @id @default(autoincrement())
   reportId              Int
   studentId             Int
+  schoolYear            String
   excusedHours          Float @default(0)
   unexcusedHours        Float @default(0)
   medicalExcusedHours   Float @default(0)
@@ -103,8 +104,8 @@ model AttendanceRecord {
 
   report AttendanceReport @relation(fields: [reportId], references: [id], onDelete: Restrict)
   student Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
-  
-  @@unique([reportId, studentId])
+
+  @@unique([studentId, schoolYear])
   @@index([reportId])
   @@index([studentId])
 }

@@ -46,8 +46,10 @@ export async function ingestAttendance(params: IngestParams): Promise<IngestResu
       }
 
       await tx.attendanceRecord.upsert({
-        where: { reportId_studentId: { reportId: report.id, studentId: student.id } },
+        // One record per student per school year — latest upload always wins.
+        where: { studentId_schoolYear: { studentId: student.id, schoolYear } },
         update: {
+          reportId: report.id, // track which upload produced this data
           excusedHours: record.excusedHours,
           unexcusedHours: record.unexcusedHours,
           medicalExcusedHours: record.medicalExcusedHours,
@@ -57,6 +59,7 @@ export async function ingestAttendance(params: IngestParams): Promise<IngestResu
         create: {
           reportId: report.id,
           studentId: student.id,
+          schoolYear,
           excusedHours: record.excusedHours,
           unexcusedHours: record.unexcusedHours,
           medicalExcusedHours: record.medicalExcusedHours,
