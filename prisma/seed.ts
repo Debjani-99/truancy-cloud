@@ -102,6 +102,20 @@ async function main() {
     },
   });
 
+  // Seed school user for password change (scoped to Graham High School)
+  await prisma.user.upsert({
+    where: { email: "change_graham_school@secondbell.dev" },
+    update: {},
+    create: {
+      firstName: "Graham High School",
+      lastName: "Admin",
+      email: "graham_school@secondbell.dev",
+      passwordHash,
+      role: "SCHOOL",
+      schoolId: graham.id,
+    },
+  });
+
   console.log("Seed complete:");
   console.log("  Counties: Champaign County, Clark County");
   console.log("  Schools: Urbana High School, Graham High School, Springfield High School");
