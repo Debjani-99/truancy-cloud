@@ -85,6 +85,12 @@ export function validateRecord(record: NormalizedRecord): string | null {
     if (val < 0) {
       return `${label} cannot be negative`;
     }
+    // A school year is typically 600–700 hours; any single value above 999 is
+    // almost certainly a PDF rendering artifact (decimal point dropped across a
+    // page break, e.g. "1800" instead of "18.00").
+    if (val > 999) {
+      return `${label} value ${val} exceeds maximum plausible hours — possible PDF rendering issue (missing decimal point)`;
+    }
   }
 
   return null;
