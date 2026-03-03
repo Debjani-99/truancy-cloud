@@ -52,11 +52,11 @@ export function normalizeRow(
     studentRef: row.studentRef,
     firstName: nameParts.firstName,
     lastName: nameParts.lastName,
-    excusedHours: parseHours(row.fields[0]) ?? 0,
-    unexcusedHours: parseHours(row.fields[1]) ?? 0,
-    medicalExcusedHours: parseHours(row.fields[2]) ?? 0,
-    suspensionHours: parseHours(row.fields[3]) ?? 0,
-    totalAbsHours: parseHours(row.fields[4]) ?? 0,
+    excusedHours: parseHours(row.fields[0]) ?? NaN,
+    unexcusedHours: parseHours(row.fields[1]) ?? NaN,
+    medicalExcusedHours: parseHours(row.fields[2]) ?? NaN,
+    suspensionHours: parseHours(row.fields[3]) ?? NaN,
+    totalAbsHours: parseHours(row.fields[4]) ?? NaN,
   };
 }
 
