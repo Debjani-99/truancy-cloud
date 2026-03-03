@@ -17,6 +17,7 @@
     "dotenv": "^17.2.4",
     "next": "16.1.4",
     "next-auth": "^4.24.13",
+    "pdf-parse": "^2.4.5",
     "pg": "^8.19.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"
@@ -28,6 +29,7 @@
     "@tailwindcss/postcss": "^4",
     "@types/bcrypt": "^6.0.0",
     "@types/node": "^20",
+    "@types/pdf-parse": "^1.1.5",
     "@types/pg": "^8.16.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
