@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 
@@ -40,6 +40,8 @@ function ReviewInner() {
   const [uploads, setUploads] = useState<UploadRow[]>([]);
   const [loadingUploads, setLoadingUploads] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [processError, setProcessError] = useState<string | null>(null);
 
   // -----------------------------
   // Auth Guard
@@ -87,38 +89,61 @@ function ReviewInner() {
   // -----------------------------
   // Load uploads for this school
   // -----------------------------
-  useEffect(() => {
-    const loadUploads = async () => {
-      if (!schoolId) return;
+  const loadUploads = useCallback(async () => {
+    if (!schoolId) return;
 
-      setLoadingUploads(true);
-      setUploadError(null);
+    setLoadingUploads(true);
+    setUploadError(null);
 
-      try {
-        const res = await fetch("/api/uploads", { cache: "no-store" });
-        const data = await res.json().catch(() => ({}));
+    try {
+      const res = await fetch("/api/uploads", { cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
 
-        if (!res.ok) {
-          setUploadError(data?.error ?? "Failed to load uploads.");
-          setUploads([]);
-          return;
-        }
-
-        const all = (data?.uploads ?? []) as UploadRow[];
-
-        // Filter for selected school
-        const filtered = all.filter((u) => u.school?.id === schoolId);
-        setUploads(filtered);
-      } catch {
-        setUploadError("Failed to load uploads.");
+      if (!res.ok) {
+        setUploadError(data?.error ?? "Failed to load uploads.");
         setUploads([]);
-      } finally {
-        setLoadingUploads(false);
+        return;
       }
-    };
 
-    loadUploads();
+      const all = (data?.uploads ?? []) as UploadRow[];
+      setUploads(all.filter((u) => u.school?.id === schoolId));
+    } catch {
+      setUploadError("Failed to load uploads.");
+      setUploads([]);
+    } finally {
+      setLoadingUploads(false);
+    }
   }, [schoolId]);
+
+  useEffect(() => {
+    loadUploads();
+  }, [loadUploads]);
+
+  // -----------------------------
+  // Process a PENDING upload
+  // -----------------------------
+  const handleProcess = async (uploadId: string) => {
+    setProcessingId(uploadId);
+    setProcessError(null);
+
+    try {
+      const res = await fetch(`/api/uploads/${uploadId}/process`, {
+        method: "POST",
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setProcessError(data?.error ?? "Processing failed.");
+      } else {
+        // Refresh the list so the status column updates
+        await loadUploads();
+      }
+    } catch {
+      setProcessError("Processing failed. Please try again.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
 
   const formatBytes = (bytes: number) => {
     const mb = bytes / (1024 * 1024);
@@ -129,6 +154,25 @@ function ReviewInner() {
   const formatDate = (iso: string) => {
     const d = new Date(iso);
     return isNaN(d.getTime()) ? iso : d.toLocaleString();
+  };
+
+  const statusBadge = (s: string) => {
+    const colors: Record<string, string> = {
+      PENDING: "bg-yellow-100 text-yellow-800",
+      PROCESSING: "bg-blue-100 text-blue-800",
+      PARSED: "bg-green-100 text-green-800",
+      FAILED: "bg-red-100 text-red-800",
+      REVIEW: "bg-purple-100 text-purple-800",
+    };
+    return (
+      <span
+        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+          colors[s] ?? "bg-gray-100 text-gray-700"
+        }`}
+      >
+        {s}
+      </span>
+    );
   };
 
   if (status === "loading") {
@@ -171,6 +215,13 @@ function ReviewInner() {
             </button>
           </div>
 
+          {/* Process error banner */}
+          {processError && (
+            <div className="mt-4 rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+              {processError}
+            </div>
+          )}
+
           {/* Upload Table */}
           <div className="mt-8">
             <h2 className="text-sm font-semibold text-gray-900">
@@ -198,7 +249,7 @@ function ReviewInner() {
                       <th className="px-4 py-3 font-medium">Size</th>
                       <th className="px-4 py-3 font-medium">Uploaded</th>
                       <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="px-4 py-3 font-medium">Open</th>
+                      <th className="px-4 py-3 font-medium">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -213,18 +264,31 @@ function ReviewInner() {
                         <td className="px-4 py-3 text-gray-700">
                           {formatDate(u.uploadedAt)}
                         </td>
-                        <td className="px-4 py-3 text-gray-700">
-                          {u.status}
+                        <td className="px-4 py-3">
+                          {statusBadge(u.status)}
                         </td>
                         <td className="px-4 py-3">
-                          <a
-                            href={`/api/uploads/${u.id}/file`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="font-semibold text-blue-600 hover:text-blue-700"
-                          >
-                            View
-                          </a>
+                          <div className="flex items-center gap-3">
+                            <a
+                              href={`/api/uploads/${u.id}/file`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="font-semibold text-blue-600 hover:text-blue-700"
+                            >
+                              View
+                            </a>
+                            {u.status === "PENDING" && (
+                              <button
+                                onClick={() => handleProcess(u.id)}
+                                disabled={processingId === u.id}
+                                className="font-semibold text-indigo-600 hover:text-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {processingId === u.id
+                                  ? "Processing…"
+                                  : "Process"}
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}

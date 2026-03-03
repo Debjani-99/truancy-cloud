@@ -9,11 +9,17 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   const passwordHash = await bcrypt.hash("password123", 10);
 
-  // Seed county
+  // Seed counties
   const champaign = await prisma.county.upsert({
     where: { name: "Champaign County" },
     update: {},
     create: { name: "Champaign County" },
+  });
+
+  const clark = await prisma.county.upsert({
+    where: { name: "Clark County" },
+    update: {},
+    create: { name: "Clark County" },
   });
 
   // Seed schools
@@ -31,6 +37,14 @@ async function main() {
     },
     update: {},
     create: { name: "Graham High School", countyId: champaign.id },
+  });
+
+  await prisma.school.upsert({
+    where: {
+      countyId_name: { countyId: clark.id, name: "Springfield High School" },
+    },
+    update: {},
+    create: { name: "Springfield High School", countyId: clark.id },
   });
 
   // Seed admin user
@@ -89,8 +103,8 @@ async function main() {
   });
 
   console.log("Seed complete:");
-  console.log("  County: Champaign County");
-  console.log("  Schools: Urbana High School, Graham High School");
+  console.log("  Counties: Champaign County, Clark County");
+  console.log("  Schools: Urbana High School, Graham High School, Springfield High School");
   console.log(
     "  Users: admin@secondbell.dev, court@secondbell.dev, urbana_school@secondbell.dev, graham_school@secondbell.dev"
   );

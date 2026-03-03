@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth";
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireAuth(["ADMIN", "COURT", "SCHOOL"]);
+  if (auth.error) return auth.error;
+
+  const { session } = auth;
   const { id } = await params;
 
   if (!id) {
@@ -19,6 +24,22 @@ export async function GET(
 
     if (!school) {
       return NextResponse.json({ error: "School not found" }, { status: 404 });
+    }
+
+    // COURT users can only access schools within their county
+    if (
+      session.user.role === "COURT" &&
+      session.user.countyId !== school.countyId
+    ) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    // SCHOOL users can only access their own school
+    if (
+      session.user.role === "SCHOOL" &&
+      session.user.schoolId !== school.id
+    ) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     return NextResponse.json(school);

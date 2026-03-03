@@ -37,6 +37,9 @@ yarn-error.log*
 # local pdf uploads (swap to S3 in production)
 /uploads
 
+# test fixture files (mock PDFs - not for version control)
+/tests/fixtures
+
 # vercel
 .vercel
 
