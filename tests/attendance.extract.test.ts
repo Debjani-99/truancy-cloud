@@ -17,37 +17,39 @@ function mockPdfText(text: string) {
   (pdfParse as any).mockResolvedValue({ text });
 }
 
-// Minimal valid ProgressBook block for one student
+// Minimal valid ProgressBook block — student header and data row in the
+// concatenated format that pdf-parse actually produces (no spaces between cells).
 const SINGLE_STUDENT_TEXT = [
   "Yearly Absence Summary 40 or More Hours",
   "URBANA ELEMENTARY                                                       2024-2025",
-  "John Doe  #115936                                          Daily    Consecutive    Monthly    Thresholds",
+  "John Doe  #115936DailyConsecutiveMonthlyThresholds",
   "Age: 8                       Calendar: Elementary A                                Grade: 02",
   "HR Teacher: JACOBS, MRS. M.              5 - Resident Attending Full Time            ACTIVE RES - Active % FS - 100",
   "School Year  Excused  Unexcused  Medical Exc.  Suspension  Total Hours  Attending  Total Abs.",
-  "2024-2025    42.00    0.00       31.17         0.00        628.00       554.83     42.00",
+  "2024-202542.000.0031.170.00628.00554.8342.00",
 ].join("\n");
 
 // Two students across a simulated page break (page header lines between them)
 const PAGE_SPLIT_TEXT = [
-  "John Doe  #115936                                          Daily    Consecutive    Monthly    Thresholds",
+  "John Doe  #115936DailyConsecutiveMonthlyThresholds",
   "Age: 8                       Calendar: Elementary A                                Grade: 02",
   "HR Teacher: JACOBS, MRS. M.              5 - Resident Attending Full Time            ACTIVE RES - Active % FS - 100",
   "School Year  Excused  Unexcused  Medical Exc.  Suspension  Total Hours  Attending  Total Abs.",
-  "2024-2025    42.00    0.00       31.17         0.00        628.00       554.83     42.00",
+  "2024-202542.000.0031.170.00628.00554.8342.00",
   // page break header lines
   "Yearly Absence Summary 40 or More Hours",
   "URBANA ELEMENTARY                                                       2024-2025",
-  "Jane Smith  #116157                                        Daily    Consecutive    Monthly    Thresholds",
+  "Jane Smith  #116157DailyConsecutiveMonthlyThresholds",
   "Age: 12                      Calendar: Elementary B                                Grade: 05",
   "HR Teacher: HOLETON, MR. R.             5 - Resident Attending Full Time            ACTIVE RES - Active % FS - 100",
   "School Year  Excused  Unexcused  Medical Exc.  Suspension  Total Hours  Attending  Total Abs.",
-  "2024-2025    6.00     50.00      0.00          0.00        628.00       572.00     56.00",
+  "2024-20256.0050.000.000.00628.00572.0056.00",
 ].join("\n");
 
-// Malformed row: decimal points dropped due to PDF page-split rendering bug
+// Malformed row: decimal points dropped due to PDF page-split rendering bug.
+// Kept in spaced format since concatenated integers are not reliably parseable.
 const MALFORMED_DECIMALS_TEXT = [
-  "Emma Gonzalez  #123578                                     Daily    Consecutive    Monthly    Thresholds",
+  "Emma Gonzalez  #123578DailyConsecutiveMonthlyThresholds",
   "Age: 12                      Calendar: Elementary B                                Grade: 05",
   "HR Teacher: ADAMS, MR. C.               5 - Resident Attending Full Time            ACTIVE RES - Active % FS - 100",
   "School Year  Excused  Unexcused  Medical Exc.  Suspension  Total Hours  Attending  Total Abs.",
@@ -64,6 +66,7 @@ describe("extractRawRows", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0].rawName).toBe("John Doe");
     expect(rows[0].studentRef).toBe("115936");
+    expect(rows[0].schoolYear).toBe("2024-2025");
     // fields: [excused, unexcused, medical, suspension, totalAbs] — TotalHours+Attending skipped
     expect(rows[0].fields).toEqual(["42.00", "0.00", "31.17", "0.00", "42.00"]);
   });
@@ -96,12 +99,12 @@ describe("extractRawRows", () => {
   it("silently skips orphaned data rows that have no preceding student header", async () => {
     // A data row that appears before any student header (e.g. page-start artifact)
     mockPdfText([
-      "2024-2025    70.00    0.00       5.00          0.00        645.00       575.00     75.00",
-      "John Doe  #115936                                          Daily    Consecutive    Monthly    Thresholds",
+      "2024-202570.000.005.000.00645.00575.0075.00",
+      "John Doe  #115936DailyConsecutiveMonthlyThresholds",
       "Age: 8                       Calendar: Elementary A                                Grade: 02",
       "HR Teacher: JACOBS, MRS. M.              5 - Resident Attending Full Time            ACTIVE RES - Active % FS - 100",
       "School Year  Excused  Unexcused  Medical Exc.  Suspension  Total Hours  Attending  Total Abs.",
-      "2024-2025    42.00    0.00       31.17         0.00        628.00       554.83     42.00",
+      "2024-202542.000.0031.170.00628.00554.8342.00",
     ].join("\n"));
 
     const rows = await extractRawRows(makePdfBuffer());

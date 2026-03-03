@@ -11,17 +11,30 @@ export class UnsupportedPdfFormatError extends Error {
 /**
  * Matches the student header line in ProgressBook Yearly Absence Summary PDFs.
  * Format: "First Last #NNNNNN Daily Consecutive Monthly Thresholds"
- * The #ID (4+ digits) is the student reference number.
+ * Handles both space-separated and concatenated (pdf-parse) output where table
+ * cells are joined with no spaces: "John Doe  #115936DailyConsecutive..."
  */
-const STUDENT_HEADER_RE = /^(.+?)\s+#(\d{4,})\b/;
+const STUDENT_HEADER_RE = /^(.+?)\s+#(\d{4,})/;
 
 /**
- * Matches a data row starting with a school year.
- * Format: "YYYY-YYYY N N N N N N N"
- * PDF columns: Excused[0] Unexcused[1] MedicalExc[2] Suspension[3] TotalHours[4] Attending[5] TotalAbs[6]
- * We extract indices 0,1,2,3,6 and skip 4 (TotalHours) and 5 (Attending).
+ * Matches a data row starting with a school year range.
+ * PDF columns: Excused Unexcused MedicalExc Suspension TotalHours Attending TotalAbs
+ * Handles both spaced and concatenated formats.
  */
-const DATA_ROW_RE = /^(\d{4}-\d{4})\s+(.+)$/;
+const DATA_ROW_RE = /^(\d{4}-\d{4})([\d.\s]+)$/;
+
+/**
+ * Extracts numeric column values from a data row suffix.
+ * Standard PDFs: cells concatenated without spaces ("42.000.0031.17...") –
+ *   /\d+\.\d{2}/g reliably splits on two-decimal boundaries.
+ * Malformed PDFs: decimal points dropped ("1800 4200 400...") –
+ *   falls back to whitespace splitting.
+ */
+function extractNumbers(s: string): string[] {
+  const decimals = s.match(/\d+\.\d{2}/g) ?? [];
+  if (decimals.length >= 7) return decimals;
+  return s.trim().split(/\s+/).filter(Boolean);
+}
 
 /**
  * Extracts raw attendance rows from a ProgressBook "Yearly Absence Summary" PDF.
@@ -33,13 +46,9 @@ const DATA_ROW_RE = /^(\d{4}-\d{4})\s+(.+)$/;
  *   School Year  Excused  Unexcused  Medical Exc.  Suspension  Total Hours  Attending  Total Abs.
  *   YYYY-YYYY    N        N          N             N           N            N          N
  *
- * Page-split behaviour: pdf-parse concatenates all pages in reading order so a student
- * header at the bottom of page N and its data row at the top of page N+1 will still be
- * processed in sequence. Rows whose table cells are cut across a page boundary may have
- * missing decimal points (e.g. "1800" instead of "18.00"); these pass through extraction
- * and are caught by the max-hours validator in normalize.ts.
- *
- * Orphaned data rows (no preceding student header in the text stream) are silently skipped.
+ * pdf-parse concatenates all pages in reading order and typically joins table
+ * cells without whitespace. Orphaned data rows (no preceding student header)
+ * are silently skipped.
  */
 export async function extractRawRows(pdfBuffer: Buffer): Promise<RawAttendanceRow[]> {
   const { text } = await pdfParse(pdfBuffer);
@@ -63,11 +72,15 @@ export async function extractRawRows(pdfBuffer: Buffer): Promise<RawAttendanceRo
     // Data row: associate with the most recently seen student header
     const dataMatch = DATA_ROW_RE.exec(line);
     if (dataMatch && pendingName) {
-      const nums = dataMatch[2].trim().split(/\s+/);
+      const nums = extractNumbers(dataMatch[2]);
       if (nums.length >= 7) {
         rows.push({
           rawName: pendingName,
           studentRef: pendingRef,
+          schoolYear: dataMatch[1],
+          // PDF columns: Excused[0] Unexcused[1] MedExc[2] Suspension[3]
+          //              TotalHours[4] Attending[5] TotalAbs[6]
+          // Skip TotalHours (index 4) and Attending (index 5).
           fields: [nums[0], nums[1], nums[2], nums[3], nums[6]],
         });
         pendingName = undefined;
