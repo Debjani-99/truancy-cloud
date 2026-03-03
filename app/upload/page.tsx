@@ -369,7 +369,26 @@ export default function UploadPage() {
                         <td className="px-4 py-3 text-gray-700">
                           {formatDate(u.uploadedAt)}
                         </td>
-                        <td className="px-4 py-3 text-gray-700">{u.status}</td>
+                        <td className="px-4 py-3">
+                          {u.status === "PROCESSING" ? (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                              <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                              </svg>
+                              Processing
+                            </span>
+                          ) : (
+                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                              u.status === "PARSED"  ? "bg-green-100 text-green-800" :
+                              u.status === "FAILED"  ? "bg-red-100 text-red-800"    :
+                              u.status === "PENDING" ? "bg-yellow-100 text-yellow-800" :
+                                                       "bg-gray-100 text-gray-700"
+                            }`}>
+                              {u.status}
+                            </span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
