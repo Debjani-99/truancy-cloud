@@ -120,7 +120,7 @@ function ReviewInner() {
   }, [loadUploads]);
 
   // -----------------------------
-  // Process a PENDING upload
+  // Process / Retry upload
   // -----------------------------
   const handleProcess = async (uploadId: string) => {
     setProcessingId(uploadId);
@@ -198,8 +198,8 @@ function ReviewInner() {
         if (openMenuId) setOpenMenuId(null);
       }}
     >
-      <div className="mx-auto w-full max-w-4xl">
-        <div className="rounded-xl border bg-white p-8 shadow-sm">
+      <div className="mx-auto w-full max-w-5xl">
+        <div className="rounded-xl border bg-white p-8 shadow-sm overflow-visible">
           {/* Header */}
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -237,7 +237,7 @@ function ReviewInner() {
               Uploaded PDFs
             </h2>
 
-            <div className="mt-3 rounded-lg border bg-white">
+            <div className="mt-3 rounded-lg border bg-white overflow-visible">
               {loadingUploads ? (
                 <div className="p-4 text-sm text-gray-600">
                   Loading uploads...
@@ -290,7 +290,7 @@ function ReviewInner() {
 
                             {openMenuId === u.id && (
                               <div
-                                className="absolute right-0 z-10 mt-2 w-44 rounded-md border border-gray-200 bg-white py-1 shadow-lg"
+                                className="absolute right-0 z-20 mt-2 w-52 rounded-md border border-gray-200 bg-white py-1 shadow-lg"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <a
@@ -323,6 +323,18 @@ function ReviewInner() {
                                     View Results
                                   </button>
                                 )}
+
+                                {u.status === "FAILED" && (
+                                  <button
+                                    onClick={() => handleProcess(u.id)}
+                                    disabled={processingId === u.id}
+                                    className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    {processingId === u.id
+                                      ? "Retrying..."
+                                      : "Retry"}
+                                  </button>
+                                )}
                               </div>
                             )}
                           </div>
@@ -332,6 +344,71 @@ function ReviewInner() {
                   </tbody>
                 </table>
               )}
+            </div>
+          </div>
+
+          {/* User Manual */}
+          <div className="mt-10 rounded-xl border border-gray-200 bg-gray-50 p-6">
+            <h2 className="text-base font-semibold text-gray-900">
+              User Guide
+            </h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Use the status and action options below to decide what to do with
+              each uploaded PDF.
+            </p>
+
+            <div className="mt-6 space-y-5 text-sm text-gray-700">
+              <div>
+                <p className="font-semibold text-yellow-700">PENDING</p>
+                <p className="mt-1">
+                  The file has been uploaded by the school, but it has not been processed yet.
+                </p>
+                <ul className="mt-2 list-disc space-y-1 pl-5">
+                  <li>
+                    <span className="font-medium">View:</span> Open the original
+                    uploaded PDF.
+                  </li>
+                  <li>
+                    <span className="font-medium">Process:</span> Start parsing
+                    the PDF and extract attendance data.
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="font-semibold text-green-700">PARSED</p>
+                <p className="mt-1">
+                  The PDF was processed successfully and results are available.
+                </p>
+                <ul className="mt-2 list-disc space-y-1 pl-5">
+                  <li>
+                    <span className="font-medium">View:</span> Open the original
+                    uploaded PDF.
+                  </li>
+                  <li>
+                    <span className="font-medium">View Results:</span> Open the
+                    extracted results and review the processed attendance data.
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="font-semibold text-red-700">FAILED</p>
+                <p className="mt-1">
+                  The system tried to process the PDF, but the process did not
+                  complete successfully.
+                </p>
+                <ul className="mt-2 list-disc space-y-1 pl-5">
+                  <li>
+                    <span className="font-medium">View:</span> Open the original
+                    uploaded PDF to inspect the file.
+                  </li>
+                  <li>
+                    <span className="font-medium">Retry:</span> Run the
+                    processing step again for the same PDF.
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
