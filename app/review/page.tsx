@@ -387,7 +387,7 @@ function ReviewInner() {
                   </li>
                   <li>
                     <span className="font-medium">View Results:</span> Open the
-                    extracted results and review the processed attendance data.
+                    the current attendance results table for this school and school year
                   </li>
                 </ul>
               </div>
