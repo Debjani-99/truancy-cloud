@@ -42,6 +42,7 @@ function ReviewInner() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [processError, setProcessError] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   // -----------------------------
   // Auth Guard
@@ -55,7 +56,6 @@ function ReviewInner() {
     if (status === "authenticated") {
       const role = session?.user?.role as Role | undefined;
 
-      // SCHOOL users should not access review page
       if (role === "SCHOOL") {
         router.replace("/dashboard");
       }
@@ -120,11 +120,12 @@ function ReviewInner() {
   }, [loadUploads]);
 
   // -----------------------------
-  // Process a PENDING upload
+  // Process / Retry upload
   // -----------------------------
   const handleProcess = async (uploadId: string) => {
     setProcessingId(uploadId);
     setProcessError(null);
+    setOpenMenuId(null);
 
     try {
       const res = await fetch(`/api/uploads/${uploadId}/process`, {
@@ -135,7 +136,6 @@ function ReviewInner() {
       if (!res.ok) {
         setProcessError(data?.error ?? "Processing failed.");
       } else {
-        // Refresh the list so the status column updates
         await loadUploads();
       }
     } catch {
@@ -143,6 +143,11 @@ function ReviewInner() {
     } finally {
       setProcessingId(null);
     }
+  };
+
+  const handleViewResults = (uploadId: string) => {
+    setOpenMenuId(null);
+    router.push(`/review/results?uploadId=${uploadId}`);
   };
 
   const formatBytes = (bytes: number) => {
@@ -164,6 +169,7 @@ function ReviewInner() {
       FAILED: "bg-red-100 text-red-800",
       REVIEW: "bg-purple-100 text-purple-800",
     };
+
     return (
       <span
         className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -186,15 +192,18 @@ function ReviewInner() {
   if (!session) return null;
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-10">
-      <div className="mx-auto w-full max-w-4xl">
-        <div className="rounded-xl border bg-white p-8 shadow-sm">
+    <main
+      className="min-h-screen bg-gray-50 px-4 py-10"
+      onClick={() => {
+        if (openMenuId) setOpenMenuId(null);
+      }}
+    >
+      <div className="mx-auto w-full max-w-5xl">
+        <div className="rounded-xl border bg-white p-8 shadow-sm overflow-visible">
           {/* Header */}
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Review PDFs
-              </h1>
+              <h1 className="text-2xl font-bold text-gray-900">Review PDFs</h1>
               <p className="mt-1 text-sm text-gray-600">
                 Review uploaded reports
               </p>
@@ -209,7 +218,7 @@ function ReviewInner() {
 
             <button
               onClick={() => router.push("/dashboard")}
-              className="rounded-md border px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+              className="rounded-md border px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
             >
               Back
             </button>
@@ -217,7 +226,7 @@ function ReviewInner() {
 
           {/* Process error banner */}
           {processError && (
-            <div className="mt-4 rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+            <div className="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {processError}
             </div>
           )}
@@ -228,15 +237,13 @@ function ReviewInner() {
               Uploaded PDFs
             </h2>
 
-            <div className="mt-3 overflow-hidden rounded-lg border bg-white">
+            <div className="mt-3 rounded-lg border bg-white overflow-visible">
               {loadingUploads ? (
                 <div className="p-4 text-sm text-gray-600">
                   Loading uploads...
                 </div>
               ) : uploadError ? (
-                <div className="p-4 text-sm text-red-700">
-                  {uploadError}
-                </div>
+                <div className="p-4 text-sm text-red-700">{uploadError}</div>
               ) : uploads.length === 0 ? (
                 <div className="p-4 text-sm text-gray-600">
                   No uploads found for this school.
@@ -264,29 +271,71 @@ function ReviewInner() {
                         <td className="px-4 py-3 text-gray-700">
                           {formatDate(u.uploadedAt)}
                         </td>
+                        <td className="px-4 py-3">{statusBadge(u.status)}</td>
                         <td className="px-4 py-3">
-                          {statusBadge(u.status)}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <a
-                              href={`/api/uploads/${u.id}/file`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="font-semibold text-blue-600 hover:text-blue-700"
+                          <div className="relative inline-block text-left">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuId((prev) =>
+                                  prev === u.id ? null : u.id
+                                );
+                              }}
+                              className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
                             >
-                              View
-                            </a>
-                            {u.status === "PENDING" && (
-                              <button
-                                onClick={() => handleProcess(u.id)}
-                                disabled={processingId === u.id}
-                                className="font-semibold text-indigo-600 hover:text-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              Actions
+                              <span className="ml-2 text-xs">▼</span>
+                            </button>
+
+                            {openMenuId === u.id && (
+                              <div
+                                className="absolute right-0 z-20 mt-2 w-52 rounded-md border border-gray-200 bg-white py-1 shadow-lg"
+                                onClick={(e) => e.stopPropagation()}
                               >
-                                {processingId === u.id
-                                  ? "Processing…"
-                                  : "Process"}
-                              </button>
+                                <a
+                                  href={`/api/uploads/${u.id}/file`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                  onClick={() => setOpenMenuId(null)}
+                                >
+                                  View
+                                </a>
+
+                                {u.status === "PENDING" && (
+                                  <button
+                                    onClick={() => handleProcess(u.id)}
+                                    disabled={processingId === u.id}
+                                    className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    {processingId === u.id
+                                      ? "Processing..."
+                                      : "Process"}
+                                  </button>
+                                )}
+
+                                {u.status === "PARSED" && (
+                                  <button
+                                    onClick={() => handleViewResults(u.id)}
+                                    className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                                  >
+                                    View Results
+                                  </button>
+                                )}
+
+                                {u.status === "FAILED" && (
+                                  <button
+                                    onClick={() => handleProcess(u.id)}
+                                    disabled={processingId === u.id}
+                                    className="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                  >
+                                    {processingId === u.id
+                                      ? "Retrying..."
+                                      : "Retry"}
+                                  </button>
+                                )}
+                              </div>
                             )}
                           </div>
                         </td>
@@ -295,6 +344,71 @@ function ReviewInner() {
                   </tbody>
                 </table>
               )}
+            </div>
+          </div>
+
+          {/* User Manual */}
+          <div className="mt-10 rounded-xl border border-gray-200 bg-gray-50 p-6">
+            <h2 className="text-base font-semibold text-gray-900">
+              User Guide
+            </h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Use the status and action options below to decide what to do with
+              each uploaded PDF.
+            </p>
+
+            <div className="mt-6 space-y-5 text-sm text-gray-700">
+              <div>
+                <p className="font-semibold text-yellow-700">PENDING</p>
+                <p className="mt-1">
+                  The file has been uploaded by the school, but it has not been processed yet.
+                </p>
+                <ul className="mt-2 list-disc space-y-1 pl-5">
+                  <li>
+                    <span className="font-medium">View:</span> Open the original
+                    uploaded PDF.
+                  </li>
+                  <li>
+                    <span className="font-medium">Process:</span> Start parsing
+                    the PDF and extract attendance data.
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="font-semibold text-green-700">PARSED</p>
+                <p className="mt-1">
+                  The PDF was processed successfully and results are available.
+                </p>
+                <ul className="mt-2 list-disc space-y-1 pl-5">
+                  <li>
+                    <span className="font-medium">View:</span> Open the original
+                    uploaded PDF.
+                  </li>
+                  <li>
+                    <span className="font-medium">View Results:</span> Open the
+                    the current attendance results table for this school and school year
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <p className="font-semibold text-red-700">FAILED</p>
+                <p className="mt-1">
+                  The system tried to process the PDF, but the process did not
+                  complete successfully.
+                </p>
+                <ul className="mt-2 list-disc space-y-1 pl-5">
+                  <li>
+                    <span className="font-medium">View:</span> Open the original
+                    uploaded PDF to inspect the file.
+                  </li>
+                  <li>
+                    <span className="font-medium">Retry:</span> Run the
+                    processing step again for the same PDF.
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
