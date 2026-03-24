@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 
 type Role = "SCHOOL" | "COURT" | "ADMIN";
 
@@ -78,6 +79,10 @@ export default function DashboardPage() {
 
   const role = (session?.user?.role ?? null) as Role | null;
   const displayName = session?.user?.name ?? session?.user?.email ?? "User";
+
+  //Added to show when password updated
+  const params = useSearchParams();
+  const passwordUpdated = params.get("passwordUpdated");
 
   // Load county/school name
   useEffect(() => {
@@ -166,6 +171,8 @@ export default function DashboardPage() {
   // =========================
   if (role === "SCHOOL") {
     return (
+      
+      
       <main className="relative min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-5">
@@ -176,6 +183,13 @@ export default function DashboardPage() {
             }}
           />
         </div>
+
+        {/* Ouput for successful updated password */}      
+        {passwordUpdated && (
+          <div className="success-banner">
+            Password updated successfully!
+            </div>
+        )}
 
         {/* Header */}
         <header className="relative z-10 border-b border-white/20 bg-white/80 backdrop-blur-xl">
@@ -366,7 +380,7 @@ export default function DashboardPage() {
               <p className="text-xs text-gray-500 capitalize">{role ? role.toLowerCase() : ""} User</p>
             </div>
             <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
+              onClick={() => router.push("settings/change-password")}
               className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
             >
               <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -377,7 +391,7 @@ export default function DashboardPage() {
                   d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                 />
               </svg>
-              Sign Out
+              Change Password
             </button>
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}

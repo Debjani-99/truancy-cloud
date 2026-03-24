@@ -104,15 +104,14 @@ async function main() {
 
   // Seed school user for password change (scoped to Graham High School)
   await prisma.user.upsert({
-    where: { email: "change_graham_school@secondbell.dev" },
+    where: { email: "truancycloud@gmail.com" },
     update: {},
     create: {
-      firstName: "Graham High School",
+      firstName: "Truancy Cloud",
       lastName: "Admin",
-      email: "graham_school@secondbell.dev",
+      email: "truancycloud@gmail.com",
       passwordHash,
-      role: "SCHOOL",
-      schoolId: graham.id,
+      role: "ADMIN",
     },
   });
 
