@@ -57,7 +57,7 @@ export function normalizeRow(
     medicalExcusedHours: parseHours(row.fields[2]) ?? NaN,
     suspensionHours: parseHours(row.fields[3]) ?? NaN,
     totalHours: parseHours(row.fields[4]) ?? NaN,
-    totalAbsHours: parseHours(row.fields[4]) ?? NaN,
+    totalAbsHours: parseHours(row.fields[5]) ?? NaN,
   };
 }
 
