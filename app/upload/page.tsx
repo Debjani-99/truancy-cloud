@@ -204,7 +204,7 @@ export default function UploadPage() {
 
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-10">
-      <div className="mx-auto w-full max-w-2xl">
+      <div className="mx-auto w-full max-w-5xl">
         <div className="rounded-xl border bg-white p-8 shadow-sm">
           {/* Header */}
           <div className="flex items-start justify-between gap-4">
@@ -355,6 +355,7 @@ export default function UploadPage() {
                       <th className="px-4 py-3 font-medium">Size</th>
                       <th className="px-4 py-3 font-medium">Uploaded</th>
                       <th className="px-4 py-3 font-medium">Status</th>
+                      <th className="px-4 py-3 font-medium">View</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -387,7 +388,18 @@ export default function UploadPage() {
                             }`}>
                               {u.status}
                             </span>
+                            
                           )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <a
+                            href={`/api/uploads/${u.id}/file`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-md border px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                          >
+                            View
+                          </a>
                         </td>
                       </tr>
                     ))}

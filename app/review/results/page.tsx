@@ -134,18 +134,18 @@ function ResultsInner() {
       return (b.truancyPercent ?? 0) - (a.truancyPercent ?? 0);
     }
 
-    if (appliedSortBy === "truancy-desc") {
+    if (appliedSortBy === "truancy-asc") {
       return (a.truancyPercent ?? 0) - (b.truancyPercent ?? 0);
     }
 
     const nameA = `${a.firstName} ${a.lastName}`.trim().toLowerCase();
     const nameB = `${b.firstName} ${b.lastName}`.trim().toLowerCase();
 
-    if (appliedSortBy === "truancy-desc") {
+    if (appliedSortBy === "name-asc") {
       return nameA.localeCompare(nameB);
     }
 
-    if (appliedSortBy === "truancy-desc") {
+    if (appliedSortBy === "name-desc") {
       return nameB.localeCompare(nameA);
     }
 
@@ -176,12 +176,21 @@ function ResultsInner() {
             )}
           </div>
 
+        <div className="flex gap-2">
+          <button
+            onClick={() => router.push("/review/results/help")}
+            className="rounded-md border bg-blue-100 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-blue-200"
+          >
+            ℹ️ How to Interpret Results
+          </button>
+
           <button
             onClick={() => router.back()}
-            className="rounded-md border px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            className="rounded-md border px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
           >
             Back
           </button>
+        </div>
         </div>
 
         <div className="mt-6 flex flex-wrap items-end gap-4 rounded-lg border bg-gray-50 p-4">
@@ -266,6 +275,27 @@ function ResultsInner() {
       </div>
         </div>
 
+      <div className="mt-6 flex items-center justify-between text-sm text-gray-600">
+        <p>
+          {displayRecords.length} students
+        </p>
+
+        <p>
+          Showing{" "}
+          {appliedThreshold === "0"
+            ? "all students"
+            : `≥ ${appliedThreshold}% truancy`}{" "}
+          • Sorted by{" "}
+          {appliedSortBy === "truancy-desc"
+            ? "Truancy % (High → Low)"
+            : appliedSortBy === "truancy-asc"
+            ? "Truancy % (Low → High)"
+            : appliedSortBy === "name-asc"
+            ? "Name (A → Z)"
+            : "Name (Z → A)"}
+        </p>
+      </div>
+
         
 
         <div className="mt-8 overflow-x-auto rounded-lg border">
@@ -320,7 +350,9 @@ function ResultsInner() {
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                          r.flag === "Court Warning"
+                          r.flag === "At Risk"
+                            ? "bg-red-200 text-red-800"
+                            : r.flag === "Court Warning"
                             ? "bg-red-100 text-red-700"
                             : r.flag === "At Watch"
                             ? "bg-yellow-100 text-yellow-700"
