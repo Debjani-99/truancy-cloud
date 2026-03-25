@@ -53,6 +53,14 @@ function ResultsInner() {
   const [records, setRecords] = useState<ResultRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [threshold, setThreshold] = useState("7");
+  const [sortBy, setSortBy] = useState("truancy-desc");
+  const [appliedThreshold, setAppliedThreshold] = useState("7");
+  const [appliedSortBy, setAppliedSortBy] = useState("truancy-desc");
+  const [appliedStartDate, setAppliedStartDate] = useState("");
+  const [appliedEndDate, setAppliedEndDate] = useState("");
 
   useEffect(() => {
     const loadResults = async () => {
@@ -115,6 +123,35 @@ function ResultsInner() {
     );
   }
 
+  const displayRecords = [...records]
+  .filter((r) => {
+    const selectedThreshold = Number(appliedThreshold);
+    if (selectedThreshold === 0) return true;
+    return (r.truancyPercent ?? 0) >= selectedThreshold;
+  })
+  .sort((a, b) => {
+    if (appliedSortBy === "truancy-desc") {
+      return (b.truancyPercent ?? 0) - (a.truancyPercent ?? 0);
+    }
+
+    if (appliedSortBy === "truancy-desc") {
+      return (a.truancyPercent ?? 0) - (b.truancyPercent ?? 0);
+    }
+
+    const nameA = `${a.firstName} ${a.lastName}`.trim().toLowerCase();
+    const nameB = `${b.firstName} ${b.lastName}`.trim().toLowerCase();
+
+    if (appliedSortBy === "truancy-desc") {
+      return nameA.localeCompare(nameB);
+    }
+
+    if (appliedSortBy === "truancy-desc") {
+      return nameB.localeCompare(nameA);
+    }
+
+    return 0;
+  });
+
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-10">
       <div className="mx-auto max-w-7xl rounded-xl border bg-white p-8 shadow-sm">
@@ -147,8 +184,92 @@ function ResultsInner() {
           </button>
         </div>
 
+        <div className="mt-6 flex flex-wrap items-end gap-4 rounded-lg border bg-gray-50 p-4">
+          <div className="flex flex-col">
+        <label className="mb-1 text-sm font-medium text-gray-700">Start Date</label>
+        <input
+          type="date"
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          className="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div className="flex flex-col">
+        <label className="mb-1 text-sm font-medium text-gray-700">End Date</label>
+        <input
+          type="date"
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          className="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div className="flex flex-col">
+        <label className="mb-1 text-sm font-medium text-gray-700">Threshold</label>
+        <select
+          value={threshold}
+          onChange={(e) => setThreshold(e.target.value)}
+          className="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="0">All</option>
+          <option value="5">5%+</option>
+          <option value="7">7%+</option>
+          <option value="8">8%+</option>
+          <option value="10">10%+</option>
+        </select>
+      </div>
+
+      <div className="flex flex-col">
+        <label className="mb-1 text-sm font-medium text-gray-700">Sort By</label>
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="truancy-desc">Truancy % (High to Low)</option>
+          <option value="truancy-asc">Truancy % (Low to High)</option>
+          <option value="name-asc">Name (A to Z)</option>
+          <option value="name-desc">Name (Z to A)</option>
+        </select>
+      </div>
+
+      <div className="ml-auto flex items-end gap-2 self-end">
+        <button
+          onClick={() => {
+            setAppliedStartDate(startDate);
+            setAppliedEndDate(endDate);
+            setAppliedThreshold(threshold);
+            setAppliedSortBy(sortBy);
+          }}
+          className="rounded-md bg-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-200"
+        >
+          Apply Changes
+        </button>
+
+        <button
+          onClick={() => {
+            setStartDate("");
+            setEndDate("");
+            setThreshold("7");
+            setSortBy("truancy-desc");
+
+            setAppliedStartDate("");
+            setAppliedEndDate("");
+            setAppliedThreshold("7");
+            setAppliedSortBy("truancy-desc");
+          }}
+          className="rounded-md border border-gray-300 bg-red-400 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-200"
+        >
+          Reset
+        </button>
+      </div>
+        </div>
+
+        
+
         <div className="mt-8 overflow-x-auto rounded-lg border">
-          {records.length === 0 ? (
+          {displayRecords.length === 0 ? (
             <div className="p-4 text-sm text-gray-600">
               No attendance records found.
             </div>
@@ -170,7 +291,7 @@ function ResultsInner() {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {records.map((r) => (
+                {displayRecords.map((r) => (
                   <tr key={r.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-gray-700">{r.studentRef ?? "-"}</td>
                     <td className="px-4 py-3 text-gray-900">
@@ -181,12 +302,34 @@ function ResultsInner() {
                     <td className="px-4 py-3 text-gray-900">{r.medicalExcusedHours}</td>
                     <td className="px-4 py-3 text-gray-900">{r.suspensionHours}</td>
                     <td className="px-4 py-3 text-gray-900">{r.addedHours}</td>
-                    <td className="px-4 py-3 text-gray-900 font-semibold">{r.totalAbsHours}</td>
-                    <td className="px-4 py-3 text-gray-900">{r.totalHours}</td>
-                    <td className="px-4 py-3 text-gray-900">
-                      {(r.truancyPercent ?? 0).toFixed(2)}%
+                    <td className="px-4 py-3 text-gray-900 ">{r.totalAbsHours}</td>
+                    <td className="px-4 py-3 text-gray-900 ">{r.totalHours}</td>
+                    <td
+                        className={`px-4 py-3 font-medium ${
+                          r.flag === "At Risk"
+                            ? "text-red-800"
+                            : r.flag === "Court Warning"
+                            ? "text-red-700"
+                            : r.flag === "At Watch"
+                            ? "text-yellow-700"
+                            : "text-green-700"
+                        }`}
+                      >
+                        {(r.truancyPercent ?? 0).toFixed(2)}%
                     </td>
-                    <td className="px-4 py-3 text-gray-900">{r.flag ?? "Normal"}</td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
+                          r.flag === "Court Warning"
+                            ? "bg-red-100 text-red-700"
+                            : r.flag === "At Watch"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-green-100 text-green-700"
+                        }`}
+                      >
+                        {r.flag ?? "Normal"}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
