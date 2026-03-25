@@ -15,6 +15,8 @@ type ResultRow = {
   suspensionHours: number;
   addedHours: number;
   totalAbsHours: number;
+  truancyPercent: number;
+  flag: "Normal" | "At Watch" | "Court Warning" | "At Risk";
 };
 
 type ReportInfo = {
@@ -161,25 +163,27 @@ function ResultsInner() {
                   <th className="px-4 py-3 font-medium">Suspension</th>
                   <th className="px-4 py-3 font-medium">Added</th>
                   <th className="px-4 py-3 font-medium">Total Abs</th>
+                  <th className="px-4 py-3 font-medium">Truancy %</th>
+                  <th className="px-4 py-3 font-medium">Flag</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {records.map((r) => (
                   <tr key={r.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-gray-700">
-                      {r.studentRef ?? "-"}
-                    </td>
+                    <td className="px-4 py-3 text-gray-700">{r.studentRef ?? "-"}</td>
                     <td className="px-4 py-3 text-gray-900">
                       {`${r.firstName} ${r.lastName}`.trim() || "-"}
                     </td>
-                    <td className="px-4 py-3 3 text-gray-900">{r.excusedHours}</td>
-                    <td className="px-4 py-3 3 text-gray-900">{r.unexcusedHours}</td>
-                    <td className="px-4 py-3 3 text-gray-900">{r.medicalExcusedHours}</td>
-                    <td className="px-4 py-3 3 text-gray-900">{r.suspensionHours}</td>
-                    <td className="px-4 py-3 3 text-gray-900">{r.addedHours}</td>
-                    <td className="px-4 py-3 3 text-gray-900 font-semibold">
-                      {r.totalAbsHours}
+                    <td className="px-4 py-3 text-gray-900">{r.excusedHours}</td>
+                    <td className="px-4 py-3 text-gray-900">{r.unexcusedHours}</td>
+                    <td className="px-4 py-3 text-gray-900">{r.medicalExcusedHours}</td>
+                    <td className="px-4 py-3 text-gray-900">{r.suspensionHours}</td>
+                    <td className="px-4 py-3 text-gray-900">{r.addedHours}</td>
+                    <td className="px-4 py-3 text-gray-900 font-semibold">{r.totalAbsHours}</td>
+                    <td className="px-4 py-3 text-gray-900">
+                      {(r.truancyPercent ?? 0).toFixed(2)}%
                     </td>
+                    <td className="px-4 py-3 text-gray-900">{r.flag ?? "Normal"}</td>
                   </tr>
                 ))}
               </tbody>

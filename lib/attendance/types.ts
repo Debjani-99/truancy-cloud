@@ -5,7 +5,7 @@ export interface RawAttendanceRow {
   /** School year extracted from the data row, e.g. "2024-2025". */
   schoolYear?: string;
   /** Raw string values for each hour column in order:
-   *  [excused, unexcused, medical, suspension, total] */
+   *  [excused, unexcused, medical, suspension, totalHours, totalAbs] */
   fields: string[];
 }
 
@@ -18,6 +18,7 @@ export interface NormalizedRecord {
   unexcusedHours: number;
   medicalExcusedHours: number;
   suspensionHours: number;
+  totalHours: number;
   totalAbsHours: number;
 }
 
