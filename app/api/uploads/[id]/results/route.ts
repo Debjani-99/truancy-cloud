@@ -44,10 +44,11 @@ export async function GET(
         const medicalExcusedHours = Number(r.medicalExcusedHours ?? 0);
         const suspensionHours = Number(r.suspensionHours ?? 0);
         const addedHours = Number(r.addedHours ?? 0);
+        const totalHours = Number(r.totalHours ?? 0);
         const totalAbsHours = Number(r.totalAbsHours ?? 0);
 
         const truancyPercent =
-          totalAbsHours > 0 ? (unexcusedHours / totalAbsHours) * 100 : 0;
+          totalHours > 0 ? (unexcusedHours / totalHours) * 100 : 0;
 
         let flag: "Normal" | "At Watch" | "Court Warning" | "At Risk" =
           "Normal";
@@ -72,6 +73,7 @@ export async function GET(
           medicalExcusedHours,
           suspensionHours,
           addedHours,
+          totalHours,
           totalAbsHours,
           truancyPercent: Number(truancyPercent.toFixed(2)),
           flag,

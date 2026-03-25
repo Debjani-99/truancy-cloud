@@ -15,6 +15,7 @@ type ResultRow = {
   suspensionHours: number;
   addedHours: number;
   totalAbsHours: number;
+  totalHours: number;
   truancyPercent: number;
   flag: "Normal" | "At Watch" | "Court Warning" | "At Risk";
 };
@@ -163,6 +164,7 @@ function ResultsInner() {
                   <th className="px-4 py-3 font-medium">Suspension</th>
                   <th className="px-4 py-3 font-medium">Added</th>
                   <th className="px-4 py-3 font-medium">Total Abs</th>
+                  <th className="px-4 py-3 font-medium">Total Hours</th>
                   <th className="px-4 py-3 font-medium">Truancy %</th>
                   <th className="px-4 py-3 font-medium">Flag</th>
                 </tr>
@@ -180,6 +182,7 @@ function ResultsInner() {
                     <td className="px-4 py-3 text-gray-900">{r.suspensionHours}</td>
                     <td className="px-4 py-3 text-gray-900">{r.addedHours}</td>
                     <td className="px-4 py-3 text-gray-900 font-semibold">{r.totalAbsHours}</td>
+                    <td className="px-4 py-3 text-gray-900">{r.totalHours}</td>
                     <td className="px-4 py-3 text-gray-900">
                       {(r.truancyPercent ?? 0).toFixed(2)}%
                     </td>
