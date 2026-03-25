@@ -99,6 +99,7 @@ model AttendanceRecord {
   unexcusedHours        Float @default(0)
   medicalExcusedHours   Float @default(0)
   suspensionHours       Float @default(0)
+  totalHours            Float  @default(0)
   totalAbsHours         Float @default(0)
   addedHours            Float @default(0) //Added weekly hours (this week - last week)
 

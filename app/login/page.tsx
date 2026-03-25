@@ -39,16 +39,18 @@ export default function LoginPage() {
       <section className="relative z-10 mx-auto flex min-h-screen max-w-6xl items-center px-6">
         <div className="grid w-full grid-cols-1 gap-10 md:grid-cols-2">
           {/* Hero text */}
+          <div className="absolute inset-0 bg-linear-to-r  from-black/10 via-black/5 to-transparent" />
           <div className="mx-auto flex max-w-lg flex-col items-center justify-center text-center">
-            <h1 className="text-8xl font-semibold leading-tight sm:text-7xl">
+            <h1 className="text-8xl font-extrabold leading-tight sm:text-7xl drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)]">
               Welcome to the Truancy Cloud Portal
             </h1>
 
-            <p className="mt-3 text-4xl text-white/80">
+            
+            <p className="mt-3 text-4xl text-white/95 drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)]">
               Secure county-based access for schools and courts
             </p>
 
-            <p className="mt-5 text-xl text-white/95">
+            <p className="mt-5 text-xl text-white/110 drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)]">
               Upload and track attendance reports securely. Access is limited by
               county and role (School, Court, Admin).
             </p>

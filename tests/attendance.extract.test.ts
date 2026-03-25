@@ -67,8 +67,8 @@ describe("extractRawRows", () => {
     expect(rows[0].rawName).toBe("John Doe");
     expect(rows[0].studentRef).toBe("115936");
     expect(rows[0].schoolYear).toBe("2024-2025");
-    // fields: [excused, unexcused, medical, suspension, totalAbs] — TotalHours+Attending skipped
-    expect(rows[0].fields).toEqual(["42.00", "0.00", "31.17", "0.00", "42.00"]);
+    // fields: [excused, unexcused, medical, suspension, totalHours, totalAbs] — Attending skipped
+    expect(rows[0].fields).toEqual(["42.00", "0.00", "31.17", "0.00", "628.00", "42.00"]);
   });
 
   it("parses multiple students across a simulated page break", async () => {
@@ -118,7 +118,7 @@ describe("normalizeRow", () => {
     const row: RawAttendanceRow = {
       rawName: "John Doe",
       studentRef: "115936",
-      fields: ["42.00", "0.00", "31.17", "0.00", "42.00"],
+      fields: ["42.00", "0.00", "31.17", "0.00", "628.00", "42.00"],
     };
     const record = normalizeRow(row);
     expect(record).not.toBeNull();
@@ -127,21 +127,23 @@ describe("normalizeRow", () => {
     expect(record!.studentRef).toBe("115936");
     expect(record!.excusedHours).toBe(42);
     expect(record!.medicalExcusedHours).toBe(31.17);
+    expect(record!.totalHours).toBe(628);
     expect(record!.totalAbsHours).toBe(42);
   });
 
   it("converts empty hour fields to 0", () => {
     const row: RawAttendanceRow = {
       rawName: "Jane Smith",
-      fields: ["", "", "", "", ""],
+      fields: ["", "", "", "", "", ""],
     };
     const record = normalizeRow(row);
     expect(record!.excusedHours).toBe(0);
+    expect(record!.totalHours).toBe(0);
     expect(record!.totalAbsHours).toBe(0);
   });
 
   it("returns null for unparseable single-word name", () => {
-    const row: RawAttendanceRow = { rawName: "Unknown", fields: ["1.0", "0.0", "0.0", "0.0", "1.0"] };
+    const row: RawAttendanceRow = { rawName: "Unknown", fields: ["1.0", "0.0", "0.0", "0.0", "10.0", "1.0"] };
     expect(normalizeRow(row)).toBeNull();
   });
 });
@@ -154,6 +156,7 @@ describe("validateRecord", () => {
     unexcusedHours: 0,
     medicalExcusedHours: 31.17,
     suspensionHours: 0,
+    totalHours: 628,
     totalAbsHours: 42,
   };
 
@@ -173,8 +176,8 @@ describe("validateRecord", () => {
 describe("processRows", () => {
   it("separates valid and invalid rows", () => {
     const rows: RawAttendanceRow[] = [
-      { rawName: "John Doe", studentRef: "115936", fields: ["42.00", "0.00", "31.17", "0.00", "42.00"] },
-      { rawName: "GarbageRow", fields: ["0.00", "0.00", "0.00", "0.00", "0.00"] },
+      { rawName: "John Doe", studentRef: "115936", fields: ["42.00", "0.00", "31.17", "0.00", "628.00", "42.00"] },
+      { rawName: "GarbageRow", fields: ["0.00", "0.00", "0.00", "0.00", "0.00", "0.00"] },
     ];
     const result = processRows(rows);
     expect(result.validRecords).toHaveLength(1);
@@ -183,7 +186,7 @@ describe("processRows", () => {
 
   it("flags rows with non-numeric hour values as invalid", () => {
     const rows: RawAttendanceRow[] = [
-      { rawName: "Jane Smith", fields: ["N/A", "0.00", "0.00", "0.00", "0.00"] },
+      { rawName: "Jane Smith", fields: ["N/A", "0.00", "0.00", "0.00", "628.00", "0.00"] },
     ];
     const result = processRows(rows);
     expect(result.validRecords).toHaveLength(0);
@@ -193,7 +196,7 @@ describe("processRows", () => {
   it("flags rows with PDF-malformed hour values (missing decimal points) as invalid", () => {
     // Simulates the page-split rendering bug: "1800" instead of "18.00"
     const rows: RawAttendanceRow[] = [
-      { rawName: "Emma Gonzalez", studentRef: "123578", fields: ["1800", "4200", "400", "000", "6000"] },
+      { rawName: "Emma Gonzalez", studentRef: "123578", fields: ["1800", "4200", "400", "000", "62500", "6000"] },
     ];
     const result = processRows(rows);
     expect(result.validRecords).toHaveLength(0);
@@ -202,8 +205,8 @@ describe("processRows", () => {
 
   it("returns all valid for well-formed records", () => {
     const rows: RawAttendanceRow[] = [
-      { rawName: "John Doe", studentRef: "115936", fields: ["42.00", "0.00", "31.17", "0.00", "42.00"] },
-      { rawName: "Jane Smith", studentRef: "116157", fields: ["6.00", "50.00", "0.00", "0.00", "56.00"] },
+      { rawName: "John Doe", studentRef: "115936", fields: ["42.00", "0.00", "31.17", "0.00", "628.00", "42.00"] },
+      { rawName: "Jane Smith", studentRef: "116157", fields: ["6.00", "50.00", "0.00", "0.00", "628.00", "56.00"] },
     ];
     const result = processRows(rows);
     expect(result.validRecords).toHaveLength(2);
