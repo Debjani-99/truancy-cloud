@@ -80,8 +80,8 @@ export async function extractRawRows(pdfBuffer: Buffer): Promise<RawAttendanceRo
           schoolYear: dataMatch[1],
           // PDF columns: Excused[0] Unexcused[1] MedExc[2] Suspension[3]
           //              TotalHours[4] Attending[5] TotalAbs[6]
-          // Skip TotalHours (index 4) and Attending (index 5).
-          fields: [nums[0], nums[1], nums[2], nums[3], nums[6]],
+          // Keep TotalHours (index 4), and skip Attending (index 5).
+          fields: [nums[0], nums[1], nums[2], nums[3], nums[4], nums[6]],
         });
         pendingName = undefined;
         pendingRef = undefined;

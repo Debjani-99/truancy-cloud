@@ -54,6 +54,7 @@ export async function ingestAttendance(params: IngestParams): Promise<IngestResu
           unexcusedHours: record.unexcusedHours,
           medicalExcusedHours: record.medicalExcusedHours,
           suspensionHours: record.suspensionHours,
+          totalHours: record.totalHours,
           totalAbsHours: record.totalAbsHours,
         },
         create: {
@@ -64,6 +65,7 @@ export async function ingestAttendance(params: IngestParams): Promise<IngestResu
           unexcusedHours: record.unexcusedHours,
           medicalExcusedHours: record.medicalExcusedHours,
           suspensionHours: record.suspensionHours,
+          totalHours: record.totalHours,
           totalAbsHours: record.totalAbsHours,
         },
       });

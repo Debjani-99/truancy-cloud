@@ -39,16 +39,18 @@ export default function LoginPage() {
       <section className="relative z-10 mx-auto flex min-h-screen max-w-6xl items-center px-6">
         <div className="grid w-full grid-cols-1 gap-10 md:grid-cols-2">
           {/* Hero text */}
+          <div className="absolute inset-0 bg-linear-to-r  from-black/10 via-black/5 to-transparent" />
           <div className="mx-auto flex max-w-lg flex-col items-center justify-center text-center">
-            <h1 className="text-3xl font-semibold leading-tight sm:text-6xl">
+            <h1 className="text-8xl font-extrabold leading-tight sm:text-7xl drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)]">
               Welcome to the Truancy Cloud Portal
             </h1>
 
-            <p className="mt-3 text-2xl text-white/80">
+            
+            <p className="mt-3 text-4xl text-white/95 drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)]">
               Secure county-based access for schools and courts
             </p>
 
-            <p className="mt-4 text-sm text-white/80">
+            <p className="mt-5 text-xl text-white/110 drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)]">
               Upload and track attendance reports securely. Access is limited by
               county and role (School, Court, Admin).
             </p>
@@ -57,9 +59,9 @@ export default function LoginPage() {
           {/* Login card */}
           <div className="flex items-center justify-center">
             <div className="w-full max-w-md rounded-2xl bg-white/30 p-6 text-center backdrop-blur-md ring-1 ring-white/15 shadow-2xl">
-              <h2 className="text-2xl font-semibold">Sign in</h2>
+              <h2 className="text-2xl font-semibold text-black/85">Sign in</h2>
 
-              <p className="mt-2 text-sm text-white/75">
+              <p className="mt-2 text-m text-black/85">
                 Authorized county account required
               </p>
 
@@ -97,7 +99,7 @@ export default function LoginPage() {
                 </button>
               </form>
 
-              <div className="mt-4 text-xs text-white/70">
+              <div className="mt-4 text-s text-black/90">
                 Having trouble? Contact your county administrator.
               </div>
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
@@ -56,7 +56,12 @@ function Card({
             viewBox="0 0 24 24"
             stroke="currentColor"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
+            />
           </svg>
         </div>
       </div>
@@ -125,9 +130,12 @@ export default function DashboardPage() {
 
       setSchoolsLoading(true);
       try {
-        const res = await fetch(`/api/counties/${session.user.countyId}/schools`, {
-          cache: "no-store",
-        });
+        const res = await fetch(
+          `/api/counties/${session.user.countyId}/schools`,
+          {
+            cache: "no-store",
+          },
+        );
 
         if (!res.ok) {
           setSchools([]);
@@ -158,7 +166,9 @@ export default function DashboardPage() {
       <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50">
         <div className="text-center">
           <div className="inline-flex h-12 w-12 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600"></div>
-          <p className="mt-4 font-medium text-gray-600">Loading your dashboard...</p>
+          <p className="mt-4 font-medium text-gray-600">
+            Loading your dashboard...
+          </p>
         </div>
       </main>
     );
@@ -196,7 +206,12 @@ export default function DashboardPage() {
           <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
             <div className="flex items-center space-x-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 text-white">
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -206,22 +221,35 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">School Portal</h1>
-                <p className="text-sm text-gray-600">{scopeName ?? "Loading..."}</p>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  School Portal
+                </h1>
+                <p className="text-sm text-gray-600">
+                  {scopeName ?? "Loading..."}
+                </p>
               </div>
             </div>
 
             <div className="flex items-center space-x-4">
               <div className="hidden text-right sm:block">
-                <p className="text-sm font-semibold text-gray-900">{displayName}</p>
-                {/* FIX: role can be null, so guard it */}
-                <p className="text-xs text-gray-500 capitalize">{role ? role.toLowerCase() : ""} User</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {displayName}
+                </p>
+                {/* FIX: role can be null */}
+                <p className="text-xs text-gray-500 capitalize">
+                  {role ? role.toLowerCase() : ""} User
+                </p>
               </div>
               <button
                 onClick={() => signOut({ callbackUrl: "/login" })}
                 className="inline-flex items-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
               >
-                <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg
+                  className="mr-2 h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -253,7 +281,12 @@ export default function DashboardPage() {
                   </p>
                 </div>
                 <div className="hidden h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white lg:flex">
-                  <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg
+                    className="h-10 w-10"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -274,9 +307,14 @@ export default function DashboardPage() {
                 title="Upload Attendance Report"
                 subtitle="Submit new attendance reports for court review. Only PDF files are accepted."
                 onClick={() => router.push("/upload")}
-                className="h-full border-blue-500 bg-gradient-to-br from-blue-200 to-indigo-50 text-white hover:border-blue-500"
+                className="h-full border-blue-500 bg-gradient-to-br from-blue-100 to-indigo-50 text-white hover:border-blue-500"
                 icon={
-                  <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg
+                    className="h-6 w-6 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -286,46 +324,19 @@ export default function DashboardPage() {
                   </svg>
                 }
               />
+            </div>           
             </div>
-
-            {/* Quick Stats/Info */}
-            <div className="space-y-6">
-              <div className="rounded-2xl border border-gray-200 bg-white/80 p-6 shadow-sm backdrop-blur-sm">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Current Session</p>
-                    <p className="text-2xl font-bold text-gray-900">2024-25</p>
-                  </div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100">
-                    <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-gray-200 bg-white/80 p-6 shadow-sm backdrop-blur-sm">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Status</p>
-                    <p className="text-lg font-semibold text-green-600">Active</p>
-                  </div>
-                  <div className="h-3 w-3 animate-pulse rounded-full bg-green-400"></div>
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* Help Section */}
           <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50/80 p-6 backdrop-blur-sm">
             <div className="flex items-start space-x-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100">
-                <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg
+                  className="h-5 w-5 text-amber-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -335,10 +346,13 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <div>
-                <h3 className="font-semibold text-amber-800">Upload Requirements</h3>
+                <h3 className="font-semibold text-amber-800">
+                  Upload Requirements
+                </h3>
                 <p className="mt-1 text-sm text-amber-700">
-                  Reports must be in PDF format and contain accurate attendance data. All uploads are automatically
-                  associated with your school account.
+                  Reports must be in PDF format and contain accurate attendance
+                  data. All uploads are automatically associated with your
+                  school account.
                 </p>
               </div>
             </div>
@@ -358,7 +372,12 @@ export default function DashboardPage() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
           <div className="flex items-center space-x-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-lg">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -375,9 +394,13 @@ export default function DashboardPage() {
 
           <div className="flex items-center space-x-4">
             <div className="hidden text-right sm:block">
-              <p className="text-sm font-semibold text-gray-900">{displayName}</p>
-              {/* FIX: role can be null, so guard it */}
-              <p className="text-xs text-gray-500 capitalize">{role ? role.toLowerCase() : ""} User</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {displayName}
+              </p>
+              {/* FIX: role can be null */}
+              <p className="text-xs text-gray-500 capitalize">
+                {role ? role.toLowerCase() : ""} User
+              </p>
             </div>
             <button
               onClick={() => router.push("settings/change-password")}
@@ -397,7 +420,12 @@ export default function DashboardPage() {
               onClick={() => signOut({ callbackUrl: "/login" })}
               className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
             >
-              <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg
+                className="mr-2 h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -417,8 +445,12 @@ export default function DashboardPage() {
         <div className="mb-8 rounded-2xl border border-white/50 bg-white/80 p-8 shadow-sm backdrop-blur-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">Welcome Back</p>
-              <h2 className="mt-1 text-3xl font-bold text-gray-900">{displayName}</h2>
+              <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">
+                Welcome Back
+              </p>
+              <h2 className="mt-1 text-3xl font-bold text-gray-900">
+                {displayName}
+              </h2>
               <p className="mt-2 text-gray-600">
                 {role === "COURT"
                   ? "Review attendance reports from schools in your county"
@@ -426,7 +458,12 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="hidden h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white lg:flex">
-              <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg
+                className="h-8 w-8"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -443,8 +480,12 @@ export default function DashboardPage() {
           <>
             <div className="mb-6 flex items-end justify-between">
               <div>
-                <h3 className="text-2xl font-bold text-gray-900">Schools in Your County</h3>
-                <p className="mt-1 text-gray-600">Select a school to review their attendance reports</p>
+                <h3 className="text-2xl font-bold text-gray-900">
+                  Schools in Your County
+                </h3>
+                <p className="mt-1 text-gray-600">
+                  Select a school to review their attendance reports
+                </p>
               </div>
             </div>
 
@@ -452,13 +493,20 @@ export default function DashboardPage() {
               <div className="flex items-center justify-center py-12">
                 <div className="text-center">
                   <div className="inline-flex h-8 w-8 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600"></div>
-                  <p className="mt-2 text-sm text-gray-500">Loading schools...</p>
+                  <p className="mt-2 text-sm text-gray-500">
+                    Loading schools...
+                  </p>
                 </div>
               </div>
             ) : schools.length === 0 ? (
               <div className="rounded-2xl border border-gray-200 bg-white/80 p-8 text-center shadow-sm backdrop-blur-sm">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
-                  <svg className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg
+                    className="h-8 w-8 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -467,8 +515,12 @@ export default function DashboardPage() {
                     />
                   </svg>
                 </div>
-                <h4 className="mb-2 text-lg font-semibold text-gray-900">No Schools Found</h4>
-                <p className="text-gray-600">No schools have been registered for this county yet.</p>
+                <h4 className="mb-2 text-lg font-semibold text-gray-900">
+                  No Schools Found
+                </h4>
+                <p className="text-gray-600">
+                  No schools have been registered for this county yet.
+                </p>
               </div>
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -479,7 +531,12 @@ export default function DashboardPage() {
                     subtitle="Review uploaded attendance reports"
                     onClick={() => router.push(`/review?schoolId=${school.id}`)}
                     icon={
-                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg
+                        className="h-6 w-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -499,8 +556,12 @@ export default function DashboardPage() {
         {role === "ADMIN" && (
           <>
             <div className="mb-6">
-              <h3 className="text-2xl font-bold text-gray-900">System Management</h3>
-              <p className="mt-1 text-gray-600">Manage schools, courts, and system-wide settings</p>
+              <h3 className="text-2xl font-bold text-gray-900">
+                System Management
+              </h3>
+              <p className="mt-1 text-gray-600">
+                Manage schools, courts, and system-wide settings
+              </p>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
@@ -509,7 +570,12 @@ export default function DashboardPage() {
                 subtitle="Browse all schools and review uploads by school"
                 onClick={() => router.push("/admin/schools")}
                 icon={
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -524,7 +590,12 @@ export default function DashboardPage() {
                 subtitle="Browse all courts and their associated schools"
                 onClick={() => router.push("/admin/courts")}
                 icon={
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"

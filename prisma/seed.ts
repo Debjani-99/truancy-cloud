@@ -22,29 +22,40 @@ async function main() {
     create: { name: "Clark County" },
   });
 
-  // Seed schools
+  // Seed schools ( scopped: champaign county)
   const urbana = await prisma.school.upsert({
     where: {
       countyId_name: { countyId: champaign.id, name: "Urbana High School" },
     },
     update: {},
-    create: { name: "Urbana High School", countyId: champaign.id },
+    create: {
+      name: "Urbana High School",
+      countyId: champaign.id,
+    },
   });
 
+  // ( scopped: champaign county)
   const graham = await prisma.school.upsert({
     where: {
       countyId_name: { countyId: champaign.id, name: "Graham High School" },
     },
     update: {},
-    create: { name: "Graham High School", countyId: champaign.id },
+    create: {
+      name: "Graham High School",
+      countyId: champaign.id,
+    },
   });
 
-  await prisma.school.upsert({
+  // ( scopped: clark county)
+  const springfield = await prisma.school.upsert({
     where: {
       countyId_name: { countyId: clark.id, name: "Springfield High School" },
     },
     update: {},
-    create: { name: "Springfield High School", countyId: clark.id },
+    create: {
+      name: "Springfield High School",
+      countyId: clark.id,
+    },
   });
 
   // Seed admin user
@@ -60,21 +71,34 @@ async function main() {
     },
   });
 
-  // Seed court user (scoped to Champaign County)
+  // Seed court users
   await prisma.user.upsert({
-    where: { email: "court@secondbell.dev" },
+    where: { email: "champaign_court@secondbell.dev" },
     update: {},
     create: {
-      firstName: "Court",
-      lastName: "Staff",
-      email: "court@secondbell.dev",
+      firstName: "Champaign",
+      lastName: "Court",
+      email: "champaign_court@secondbell.dev",
       passwordHash,
       role: "COURT",
       countyId: champaign.id,
     },
   });
 
-  // Seed school user (scoped to Urbana High School)
+  await prisma.user.upsert({
+    where: { email: "clark_court@secondbell.dev" },
+    update: {},
+    create: {
+      firstName: "Clark",
+      lastName: "Court",
+      email: "clark_court@secondbell.dev",
+      passwordHash,
+      role: "COURT",
+      countyId: clark.id,
+    },
+  });
+
+  // Seed school users 
   await prisma.user.upsert({
     where: { email: "urbana_school@secondbell.dev" },
     update: {},
@@ -88,7 +112,6 @@ async function main() {
     },
   });
 
-  // Seed school user (scoped to Graham High School)
   await prisma.user.upsert({
     where: { email: "graham_school@secondbell.dev" },
     update: {},
@@ -99,6 +122,19 @@ async function main() {
       passwordHash,
       role: "SCHOOL",
       schoolId: graham.id,
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { email: "springfield_school@secondbell.dev" },
+    update: {},
+    create: {
+      firstName: "Springfield High School",
+      lastName: "Admin",
+      email: "springfield_school@secondbell.dev",
+      passwordHash,
+      role: "SCHOOL",
+      schoolId: springfield.id,
     },
   });
 
@@ -117,11 +153,13 @@ async function main() {
 
   console.log("Seed complete:");
   console.log("  Counties: Champaign County, Clark County");
-  console.log("  Schools: Urbana High School, Graham High School, Springfield High School");
   console.log(
-    "  Users: admin@secondbell.dev, court@secondbell.dev, urbana_school@secondbell.dev, graham_school@secondbell.dev"
+    "  Schools: Urbana High School, Graham High School, Springfield High School"
   );
-  console.log("  Password for all: password123");
+  console.log(
+    "  Users: admin@secondbell.dev, champaign_court@secondbell.dev, clark_court@secondbell.dev, urbana_school@secondbell.dev, graham_school@secondbell.dev, springfield_school@secondbell.dev"
+  );
+  console.log("  Password for all users: password123");
 }
 
 main()
