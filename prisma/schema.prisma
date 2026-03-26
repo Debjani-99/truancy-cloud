@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../app/generated/prisma"
@@ -13,129 +7,115 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Role {
-  ADMIN
-  COURT
-  SCHOOL
-}
-
 model User {
   id           String   @id @default(uuid())
   firstName    String
   lastName     String
   email        String   @unique
-  passwordHash String
   role         Role
   countyId     String?
   schoolId     String?
   createdAt    DateTime @default(now())
-
-  county  County?  @relation(fields: [countyId], references: [id], onDelete: SetNull)
-  school  School?  @relation(fields: [schoolId], references: [id], onDelete: SetNull)
-  uploads Upload[]
+  passwordHash String
+  uploads      Upload[]
+  county       County?  @relation(fields: [countyId], references: [id])
+  school       School?  @relation(fields: [schoolId], references: [id])
 
   @@index([countyId])
   @@index([schoolId])
 }
 
 model County {
-  id          String @id @default(uuid())
-  name        String @unique
-
+  id         String   @id @default(uuid())
+  name       String   @unique
   schools    School[]
-  courtUsers User[] // users with role=COURT (enforced in app logic)
+  courtUsers User[]
 }
 
 model School {
-  id          String @id @default(uuid())
-  name        String
-  countyId    String
-
-  county  County   @relation(fields: [countyId], references: [id], onDelete: Restrict)
-  users   User[]   // users with role=SCHOOL (enforced in app logic)
-  uploads Upload[]
-  students Student[]
+  id                String             @id @default(uuid())
+  name              String
+  countyId          String
   attendanceReports AttendanceReport[]
+  county            County             @relation(fields: [countyId], references: [id])
+  students          Student[]
+  uploads           Upload[]
+  users             User[]
 
   @@unique([countyId, name])
   @@index([countyId])
 }
 
 model Student {
-  id          Int @id @default(autoincrement())
-  schoolId    String
-  studentRef  String?
-  firstName   String
-  lastName    String
-  createdAt   DateTime @default(now())
-
-  school School @relation(fields: [schoolId], references: [id], onDelete: Restrict)
-
-  records AttendanceRecord[]
+  id         Int                @id @default(autoincrement())
+  schoolId   String
+  studentRef String?
+  firstName  String
+  lastName   String
+  createdAt  DateTime           @default(now())
+  records    AttendanceRecord[]
+  school     School             @relation(fields: [schoolId], references: [id])
 
   @@unique([schoolId, studentRef])
-  @@index([schoolId, lastName, firstName])
 }
 
 model AttendanceReport {
-  id          Int @id @default(autoincrement())
-  uploadId    String @unique
-  schoolId    String
-  schoolYear  String
-  createdAt   DateTime    @default(now())
-
-  upload Upload @relation(fields: [uploadId], references: [id], onDelete: Restrict) 
-  school School @relation(fields: [schoolId], references: [id], onDelete: Restrict)
-
-  records AttendanceRecord[]
+  id         Int                @id @default(autoincrement())
+  uploadId   String             @unique
+  schoolId   String
+  schoolYear String
+  createdAt  DateTime           @default(now())
+  records    AttendanceRecord[]
+  school     School             @relation(fields: [schoolId], references: [id])
+  upload     Upload             @relation(fields: [uploadId], references: [id])
 }
 
 model AttendanceRecord {
-  id                    Int @id @default(autoincrement())
-  reportId              Int
-  studentId             Int
-  schoolYear            String
-  excusedHours          Float @default(0)
-  unexcusedHours        Float @default(0)
-  medicalExcusedHours   Float @default(0)
-  suspensionHours       Float @default(0)
-  totalHours            Float  @default(0)
-  totalAbsHours         Float @default(0)
-  addedHours            Float @default(0) //Added weekly hours (this week - last week)
-
-  report AttendanceReport @relation(fields: [reportId], references: [id], onDelete: Restrict)
-  student Student @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  id                  Int              @id @default(autoincrement())
+  reportId            Int
+  studentId           Int
+  excusedHours        Float
+  unexcusedHours      Float
+  medicalExcusedHours Float
+  suspensionHours     Float
+  totalAbsHours       Float
+  addedHours          Float
+  schoolYear          String
+  report              AttendanceReport @relation(fields: [reportId], references: [id])
+  student             Student          @relation(fields: [studentId], references: [id])
 
   @@unique([studentId, schoolYear])
-  @@index([reportId])
-  @@index([studentId])
 }
 
-enum UploadStatus {
-  PENDING          // Uploaded, not yet extracted
-  PROCESSING       // Court triggered extraction
-  PARSED           // Successfully parsed + data inserted
-  FAILED           // Parsing failed
-  REVIEW          // Need data calculation
-} 
-
 model Upload {
-  id           String       @id @default(uuid())
+  id           String            @id @default(uuid())
   filename     String
   storageKey   String
   fileSize     Int
   mimeType     String
-  status       UploadStatus @default(PENDING)
+  status       UploadStatus      @default(PENDING)
   schoolId     String
-  uploadedById String
-  uploadedAt   DateTime     @default(now())
+  uploadedAt   DateTime          @default(now())
   errorMessage String?
-
-  school     School @relation(fields: [schoolId], references: [id])
-  uploadedBy User   @relation(fields: [uploadedById], references: [id])
-
-  report     AttendanceReport?
+  uploadedById String
+  report       AttendanceReport?
+  school       School            @relation(fields: [schoolId], references: [id])
+  uploadedBy   User              @relation(fields: [uploadedById], references: [id])
 
   @@index([schoolId])
   @@index([uploadedById])
+}
+
+enum Role {
+  ADMIN
+  COURT
+  SCHOOL
+}
+
+enum UploadStatus {
+  PENDING
+  PROCESSING
+  PARSED
+  FAILED
+  REVIEW
 }

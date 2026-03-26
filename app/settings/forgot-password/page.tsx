@@ -100,7 +100,7 @@ export default function LoginPage() {
                   disabled={loading}
                   className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black hover:opacity-80"
                 >
-                  {loading ? "Sending..." : "Send Reset Email"}
+                  {loading ? "Sending..." : "Send Password Reset Email"}
                 </button>
               </form>
               <button
