@@ -85,9 +85,7 @@ export default function DashboardPage() {
   const role = (session?.user?.role ?? null) as Role | null;
   const displayName = session?.user?.name ?? session?.user?.email ?? "User";
 
-  //Added to show when password updated
-  const params = useSearchParams();
-  const passwordUpdated = params.get("passwordUpdated");
+ 
 
   // Load county/school name
   useEffect(() => {
@@ -194,12 +192,7 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Ouput for successful updated password */}      
-        {passwordUpdated && (
-          <div className="success-banner">
-            Password updated successfully!
-            </div>
-        )}
+        
 
         {/* Header */}
         <header className="relative z-10 border-b border-white/20 bg-white/80 backdrop-blur-xl">
