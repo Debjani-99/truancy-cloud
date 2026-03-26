@@ -1,6 +1,9 @@
 import { Resend } from "resend";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import prisma from "@/lib/prisma"
+import bcrypt from "bcrypt";
+import crypto from "crypto";
 
 export const runtime = "nodejs";
 
@@ -10,20 +13,52 @@ export async function POST(req: Request) {
  
   const session = await getServerSession(authOptions);
 
-  if (!session?.user?.email) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  let email = session?.user?.email || null;
+
+  if (!email) {
+    const body = await req.json();
+    email = body?.email?.toLowerCase().trim();
+
+    if (!email){
+      return Response.json( 
+        { error: "Email is required" },
+        { status: 400 }
+      );
+    }
   }
 
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, firstName: true, lastName: true }
+  });
+
+  if (!user) {
+    return Response.json(
+      { error: "No user exists with that email" },
+      { status: 400 }
+    )
+  }
+
+  const tempcode = crypto.randomInt(100000, 999999).toString()
+  const hashed = await bcrypt.hash(tempcode, 10);
+
+  await prisma.user.update({
+    where: { id: user.id},
+    data: { passwordHash: hashed}
+  });
+  
   try {
     
     await resend.emails.send({
       from: "test@resend.dev",
-      to: "truancycloud@gmail.com", 
+      to: email, 
       subject: "Reset Password",
       html: `
         <h2>Reset Password</h2>
-        <p>Hello ${session.user.name},</p>
-        <p>Here are instructions to reset your password.</p>
+        <p>Hello ${user.firstName},</p>
+        <p>A temporary passcode has been generated for your account. Please use the code below to sign in and complete the required steps..</p>
+        <p>Temporary Passcode: ${tempcode}</p>
+        <p>For your security, this passcode is valid for a limited time and can only be used once. After signing in, you’ll be prompted to create a new permanent password.</p>
       `,
     });
 

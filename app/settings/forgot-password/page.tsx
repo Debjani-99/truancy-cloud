@@ -5,24 +5,36 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState("")
   const [error, setError] = useState("");
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setLoading(true);
     setError("");
+    setSuccess("");
 
-    const res = await signIn("credentials", {
-      email: form.email,
-      password: form.password,
-      redirect: false,
-    });
+    try {
+      const res = await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json"},
+        body: JSON.stringify({ email }),
+      });
 
-    if (res?.error) {
-      setError("Invalid email or password");
-    } else {
-      window.location.href = "/dashboard";
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Something went wrong");
+      } else {
+        setSuccess("A reset code has been sent to that email")
+      }
+    } catch (err) {
+      setError("Network error - please try again.");
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -61,7 +73,7 @@ export default function LoginPage() {
           {/* Login card */}
           <div className="flex items-center justify-center">
             <div className="w-full max-w-md rounded-2xl bg-white/30 p-6 text-center backdrop-blur-md ring-1 ring-white/15 shadow-2xl">
-              <h2 className="text-2xl font-semibold text-black/85">Sign in</h2>
+              <h2 className="text-2xl font-semibold text-black/85">Enter Email to Reset Password</h2>
 
               <p className="mt-2 text-m text-black/85">
                 Authorized county account required
@@ -75,36 +87,27 @@ export default function LoginPage() {
                 <input
                   type="email"
                   placeholder="Email"
-                  value={form.email}
+                  value={email}
                   onChange={(e) =>
-                    setForm({ ...form, email: e.target.value })
+                    setEmail(e.target.value)
                   }
                   className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm text-black placeholder-gray-400"
-                  required
-                />
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={form.password}
-                  onChange={(e) =>
-                    setForm({ ...form, password: e.target.value })
-                  }
-                  className="mt-3 w-full rounded-lg bg-white px-4 py-2.5 text-sm text-black placeholder-gray-400"
                   required
                 />
 
                 <button
                   type="submit"
+                  disabled={loading}
                   className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black hover:opacity-80"
                 >
-                  Sign In
+                  {loading ? "Sending..." : "Send Reset Email"}
                 </button>
               </form>
               <button
-                  onClick={() => router.push("settings/forgot-password")}
+                  onClick={() => router.push("/login")}
                   className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black hover:opacity-80"
               >
-                  Forgot Password
+                  Return to login
               </button>
 
               <div className="mt-4 text-s text-black/90">
