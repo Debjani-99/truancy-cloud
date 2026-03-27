@@ -138,6 +138,19 @@ async function main() {
     },
   });
 
+  // Seed school user for password change (scoped to Graham High School)
+  await prisma.user.upsert({
+    where: { email: "truancycloud@gmail.com" },
+    update: {},
+    create: {
+      firstName: "Truancy Cloud",
+      lastName: "Admin",
+      email: "truancycloud@gmail.com",
+      passwordHash,
+      role: "ADMIN",
+    },
+  });
+
   console.log("Seed complete:");
   console.log("  Counties: Champaign County, Clark County");
   console.log(
