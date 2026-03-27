@@ -1,6 +1,10 @@
 Truancy Cloud is a Next.js (App Router) full-stack web application designed to securely manage truancy-related data for schools and courts.
 
 The project supports role-based access, secure authentication, and scalable cloud deployment.
+The system allows:
+- Schools to upload attendance reports (PDFs)
+- Courts to process and analyze attendance data
+- Role-based access to ensure secure and scoped data visibility
 
 The project is also set up to be containerized with Docker and deployed to NRP (using Kubernetes).
 
@@ -14,6 +18,33 @@ The project is also set up to be containerized with Docker and deployed to NRP (
 - County-scoped data access for court users
 - Server-side route protection for authenticated pages
 - Multi-tenant architecture with county- and school-scoped access
+- PDF upload validation (type + size + structure)
+- Attendance PDF parsing (ProgressBook format)
+- Data normalization and ingestion into database
+- Student-level attendance aggregation
+- Truancy % calculation and risk classification
+- Court review dashboard with:
+  - Filtering (risk level)
+  - Sorting (truancy %, name)
+- Upload status tracking (PENDING, PROCESSING, PARSED, FAILED)
+
+---
+
+## System Flow (End-to-End)
+
+1. School uploads attendance PDF
+2. File is validated (type, size, structure)
+3. File is stored in Ceph S3
+4. Upload record is created (status = PENDING)
+5. Court user triggers processing
+6. PDF is parsed into structured data
+7. Data is normalized and validated
+8. Student records are created/updated in database
+9. Attendance records are stored (year-to-date snapshot)
+10. Truancy % is calculated
+11. Results are displayed in the review dashboard
+
+----
 
 ## Tech Stack
 
@@ -25,7 +56,7 @@ The project is also set up to be containerized with Docker and deployed to NRP (
 - **Authentication & Authorization**
   - Auth.js / NextAuth
   - Credential-based login (email + password)
-  - Role-based access (RBAC) for Admin, Court, and School
+  - Role-based access (RBAC)
   - JWT-based sessions
   - Session scoping:
     - countyId for COURT users
@@ -34,17 +65,19 @@ The project is also set up to be containerized with Docker and deployed to NRP (
 - **Database**
   - PostgreSQL
   - Prisma ORM
-  - Seed scripts for initial users (Admin, Court, School)
+  - Seed scripts for initial users
 
 - **File storage**
   - NRP Ceph S3 (S3-compatible object storage)
 
 - **PDF processing**
-  - pdf-parse or pdfjs (Node libraries)
+  - pdf-parse (structured extraction)
 
 - **Deployment**
   - Docker (containerization)
   - Kubernetes (NRP / Nautilus cluster)
+ 
+---
 
 ## System Requirements
 
@@ -58,6 +91,7 @@ Before running the project, make sure you have the following installed:
 
 - **kubectl (for Kubernetes deployment to NRP)**
 
+---
 
 ## Database (Docker-Based PostgreSQL)
 
@@ -73,6 +107,9 @@ Check Docker:
 docker --version
 docker ps
 ```
+
+---
+
 ## Start PostgreSQL Container
 
 ```bash
@@ -83,6 +120,7 @@ docker run --name truancy-postgres \
   -p 5433:5432 \
   -d postgres:15
 ```
+---
 
 ## Authentication & Access Control Details
 
@@ -107,58 +145,69 @@ docker run --name truancy-postgres \
 - Logged-in users with the wrong role are blocked from protected pages
 - Access is enforced at the page and API level, not just the UI
 
+---
+
+## Key Design Decisions
+
+### Cumulative Data Model
+
+- Each upload represents a **year-to-date snapshot**
+- Prevents duplicate records
+- Simplifies data consistency
+- Tradeoff: no historical tracking yet
+
+---
+
+### RBAC at Multiple Layers
+
+- Enforced at:
+  - UI level
+  - API level
+  - Database queries
+- Ensures strong data isolation between schools and counties
+
+---
+
+### PDF Parsing Approach
+
+- Uses pattern-based parsing (pdf-parse)
+- Optimized for known format (ProgressBook)
+- Tradeoff: less flexible for unknown formats
+
+---
+
 ## Project Folder Structure
 
-**app/** : Top level view
+```bash
+truancy-cloud/
+├── app/                    # Next.js App Router (pages, layouts, UI)
+│   ├── page.tsx           # Landing page
+│   ├── layout.tsx         # Global layout
+│   ├── globals.css        # Global styles
+│   └── session-wrapper.tsx# Auth provider (NextAuth)
 
-- **/page.tsx** : Landing / entry page.
-- **/layout.tsx** : Global layout (wrapper for all pages).
-- **/globals.css** : Global styles.
-- **/session-wrapper.tsx** : Client-side session provider (NextAuth).
+├── admin/                 # Admin-only views (manage courts, schools)
+├── dashboard/             # Role-based landing page after login
+├── upload/                # School upload UI
+├── review/                # Court/Admin review workspace
 
-**admin/** : Admin-only pages (courts, schools, and admin dashboards)
+├── api/                   # Backend API routes
+│   ├── auth/              # Authentication (NextAuth)
+│   ├── uploads/           # Upload handling + file retrieval
+│   ├── reports/           # PDF processing + ingestion
+│   ├── counties/          # County + school data (admin/court)
+│   ├── schools/           # School data endpoints
+│   └── court/             # Court-specific routes
 
-- **courts/page.tsx** :
-  - **courts/[countyID]/page.tsx** :
+├── prisma/                # Database schema + migrations
+├── tests/                 # Automated tests (Vitest, RBAC)
+├── kube/                  # Kubernetes deployment configs
 
-- **schools/page.tsx** :
+├── .env                   # Environment variables (local)
+├── package.json           # Project dependencies
+├── README.md              # Project documentation
 
-**api/** : Backend API routes used by the frontend
-
-- **admin/ping/route.ts** : Check endpoint for admin API routes.
-
-- **auth/[nextAuth]/route.ts** : Handles authentication (login, logout, sessions) using Auth.js / NextAuth.
-
-- **counties/route.ts** : Returns the list of counties (admin view).
-  - **counties/[id]/route.ts** : Fetches details for a specific county by ID.
-    - **counties/[id]/schools/route.ts** : Returns all schools belonging to a specific county (admin or court-scoped).
-
-- **court/ping/route.ts**     : Check endpoint for court routes.
-- **court/schools/route.ts**  : Returns schools accessible to the logged-in court user.
-
-- **reports/upload/route.ts** : Handles PDF upload and metadata storage (likely S3 + DB).
-
-- **school/me/route.ts** : Returns the logged-in school user’s own school information(session-scoped).
-
-- **schools/route.ts** : Returns list of schools (admin view).
-  - **schools/[id]/route.ts** : Fetches details for a specific school by ID (RBAC protected).
-
-- **uploads/route.ts** : Returns list of uploaded files (filtered by role).
-  - **uploads/[id]/file/route.ts** : Returns the actual PDF file from object storage (Ceph S3).
-
-**dashboard/**  : Main landing page after login (role-based UI).
-
-**login/**      : Authentication entry point.
-
-**review/**     : Court/Admin review workspace.
-
-**upload/**     : School upload workspace.
-
-**prisma/**     : Database schema and migrations (Postgres).
-
-**tests/**      : Automated tests for API routes and access control logic.
-**kube/**       : Kubernetes deployment configuration for NRP (Nautilus cluster).
-
+```
 
 ## Environment Variables
 
@@ -172,10 +221,36 @@ NEXTAUTH_URL=http://localhost:3000
 
 ## Seed the Database
 
+Run the following commands to initialize the database and create demo data:
+
 ```bash
 npx prisma db push
 npm run seed
 ```
+
+## Demo Accounts
+
+The following accounts are available for testing different roles within the system:
+
+| Role   | Email             | Password     |
+|--------|------------------|--------------|
+| Admin  | admin@secondbell.dev   | password123  |
+| Court  | champaign_court@secondbell.dev | password123  |
+| Court  | clark_court@secondbell.dev | password123  |
+| School | urbana_school@secondbell.dev  | password123  |
+| School | graham_school@secondbell.dev | password123  |
+| School | springfield_school@secondbell.dev | password123  |
+
+> These accounts are created using the seed script and are intended for development and demo purposes only.
+
+### Seed Command
+
+To generate these accounts locally:
+
+```bash
+npm run seed
+```
+---
 
 ## One-time setup
 
@@ -265,6 +340,81 @@ git pull origin main
 ```
 
 Now you’re synced.
+
+---
+
+## Test Suite
+
+### Automated
+
+- **Vitest**
+- RBAC validation
+- API response testing
+
+
+### Manual Testing
+
+- Login as each role:
+  - Admin
+  - Court
+  - School
+
+- Upload PDFs:
+  - Valid file
+  - Invalid file
+
+- Process reports
+
+- Verify:
+  - Status changes (PENDING → PROCESSING → PARSED/FAILED)
+  - Truancy calculations
+
+- Retry failed uploads
+
+---
+
+## Unique Aspects / Pitfalls
+
+### PDF Parsing Constraints
+
+- The system currently supports a specific attendance report format (ProgressBook)
+- Variations in PDF structure (spacing, formatting) may cause parsing failures
+- Parsing logic relies on pattern matching and may require updates for new formats
+
+---
+
+### Cumulative Data Model
+
+- Attendance data is treated as **year-to-date snapshots**
+- Re-uploading a report overwrites previous records for that student and school year
+- The system does not yet support true historical tracking or time-series analysis
+
+---
+
+### RBAC Enforcement Complexity
+
+- Role-based access control must be enforced consistently across:
+  - UI (page access)
+  - API routes
+  - Database queries
+- Improper enforcement can lead to data leakage across schools or counties
+
+---
+
+### File Storage (Ceph S3)
+
+- Files are stored in an S3-compatible object storage (Ceph)
+- Requires correct environment configuration
+- Missing or incorrect credentials will break upload and retrieval functionality
+
+---
+
+### Common Issues / Debugging
+
+- Docker container conflicts (e.g., PostgreSQL already running)
+- Missing or incorrect `.env` variables
+- Cached images in Kubernetes deployments (old versions running)
+- Failed uploads due to invalid file format or size limits
 
 ## Learn More
 
