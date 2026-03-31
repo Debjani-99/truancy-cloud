@@ -72,6 +72,7 @@ model Student {
   school School @relation(fields: [schoolId], references: [id], onDelete: Restrict)
 
   records AttendanceRecord[]
+  history AttendanceHistory[]
 
   @@unique([schoolId, studentRef])
   @@index([schoolId, lastName, firstName])
@@ -88,6 +89,7 @@ model AttendanceReport {
   school School @relation(fields: [schoolId], references: [id], onDelete: Restrict)
 
   records AttendanceRecord[]
+  history AttendanceHistory[]
 }
 
 model AttendanceRecord {
@@ -139,3 +141,25 @@ model Upload {
   @@index([schoolId])
   @@index([uploadedById])
 }
+
+model AttendanceHistory {
+  id                  Int    @id @default(autoincrement())
+  studentId           Int
+  reportId            Int
+  schoolYear          String
+  excusedHours        Float  @default(0)
+  unexcusedHours      Float  @default(0)
+  medicalExcusedHours Float  @default(0)
+  suspensionHours     Float  @default(0)
+  totalHours          Float  @default(0)
+  totalAbsHours       Float  @default(0)
+  addedHours          Float  @default(0)
+
+  student Student          @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  report  AttendanceReport @relation(fields: [reportId],  references: [id], onDelete: Restrict)
+
+  @@unique([studentId, reportId])
+  @@index([studentId])
+  @@index([reportId])
+}
+
