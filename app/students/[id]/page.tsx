@@ -100,41 +100,33 @@ export default async function StudentDetailPage({ params }: StudentPageProps) {
     notFound();
   }
 
-  type StudentWithRelations = NonNullable<
-  Awaited<ReturnType<typeof prisma.student.findFirst>>
->;
+  let student = null;
 
-let student:
-  | (StudentWithRelations & {
-      history: HistoryRow[];
-      records: StudentWithRelations["records"];
-      school: StudentWithRelations["school"];
-    })
-  | null = null;
-  
+  const studentInclude = {
+  school: true,
+  records: {
+    include: {
+      report: true,
+    },
+  },
+  history: {
+    include: {
+      report: true,
+    },
+    orderBy: {
+      report: {
+        createdAt: "asc",
+      },
+    },
+  },
+} as const;
+
   if (session.user.role === "ADMIN") {
     student = await prisma.student.findFirst({
       where: {
         id: studentId,
       },
-      include: {
-        school: true,
-        records: {
-          include: {
-            report: true,
-          },
-        },
-        history: {
-          include: {
-            report: true,
-          },
-          orderBy: {
-            report: {
-              createdAt: "asc",
-            },
-          },
-        },
-      },
+      include: studentInclude,
     });
   } else if (session.user.role === "COURT") {
     if (!session.user.countyId) {
@@ -147,24 +139,7 @@ let student:
           countyId: session.user.countyId,
         },
       },
-      include: {
-        school: true,
-        records: {
-          include: {
-            report: true,
-          },
-        },
-        history: {
-          include: {
-            report: true,
-          },
-          orderBy: {
-            report: {
-              createdAt: "asc",
-            },
-          },
-        },
-      },
+     include: studentInclude,
     });
   } else if (session.user.role === "SCHOOL") {
     if (!session.user.schoolId) {
@@ -175,24 +150,7 @@ let student:
         id: studentId,
         schoolId: session.user.schoolId,
       },
-      include: {
-        school: true,
-        records: {
-          include: {
-            report: true,
-          },
-        },
-        history: {
-          include: {
-            report: true,
-          },
-          orderBy: {
-            report: {
-              createdAt: "asc",
-            },
-          },
-        },
-      },
+      include: studentInclude,
     });
   }
 
