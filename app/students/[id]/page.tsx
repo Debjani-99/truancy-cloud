@@ -104,6 +104,7 @@ export default async function StudentDetailPage({ params }: StudentPageProps) {
         records: Awaited<
           ReturnType<typeof prisma.student.findFirst>
         >["records"];
+        school: Awaited<ReturnType<typeof prisma.student.findFirst>>["school"];
       })
     | null = null;
 
