@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
 
@@ -87,9 +87,11 @@ type HistoryRow = {
 
 export default async function StudentDetailPage({ params }: StudentPageProps) {
   const auth = await requireAuth(["ADMIN", "COURT", "SCHOOL"]);
-  if (auth.error) return auth.error;
-
-  const { session } = auth;
+    if (auth.error) {
+    redirect("/login");
+    }
+    
+    const session = auth.session;
 
   const { id } = await params;
   const studentId = Number(id);
