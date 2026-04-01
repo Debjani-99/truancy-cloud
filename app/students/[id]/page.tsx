@@ -100,16 +100,18 @@ export default async function StudentDetailPage({ params }: StudentPageProps) {
     notFound();
   }
 
-  let student:
-    | (Awaited<ReturnType<typeof prisma.student.findFirst>> & {
-        history: HistoryRow[];
-        records: Awaited<
-          ReturnType<typeof prisma.student.findFirst>
-        >["records"];
-        school: Awaited<ReturnType<typeof prisma.student.findFirst>>["school"];
-      })
-    | null = null;
+  type StudentWithRelations = NonNullable<
+  Awaited<ReturnType<typeof prisma.student.findFirst>>
+>;
 
+let student:
+  | (StudentWithRelations & {
+      history: HistoryRow[];
+      records: StudentWithRelations["records"];
+      school: StudentWithRelations["school"];
+    })
+  | null = null;
+  
   if (session.user.role === "ADMIN") {
     student = await prisma.student.findFirst({
       where: {
