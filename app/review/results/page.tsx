@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 type ResultRow = {
   id: number;
@@ -236,8 +237,8 @@ function ResultsInner() {
           onChange={(e) => setSortBy(e.target.value)}
           className="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="truancy-desc">Truancy % (High to Low)</option>
-          <option value="truancy-asc">Truancy % (Low to High)</option>
+          <option value="truancy-desc">Absence % (High to Low)</option>
+          <option value="truancy-asc">Absence % (Low to High)</option>
           <option value="name-asc">Name (A to Z)</option>
           <option value="name-desc">Name (Z to A)</option>
         </select>
@@ -287,9 +288,9 @@ function ResultsInner() {
             : `≥ ${appliedThreshold}% truancy`}{" "}
           • Sorted by{" "}
           {appliedSortBy === "truancy-desc"
-            ? "Truancy % (High → Low)"
+            ? "Absence % (High to Low)"
             : appliedSortBy === "truancy-asc"
-            ? "Truancy % (Low → High)"
+            ? "Absence % (Low to High)"
             : appliedSortBy === "name-asc"
             ? "Name (A → Z)"
             : "Name (Z → A)"}
@@ -316,7 +317,7 @@ function ResultsInner() {
                   <th className="px-4 py-3 font-medium">Added</th>
                   <th className="px-4 py-3 font-medium">Total Abs</th>
                   <th className="px-4 py-3 font-medium">Total Hours</th>
-                  <th className="px-4 py-3 font-medium">Truancy %</th>
+                  <th className="px-4 py-3 font-medium">Absence %</th>
                   <th className="px-4 py-3 font-medium">Flag</th>
                 </tr>
               </thead>
@@ -324,8 +325,13 @@ function ResultsInner() {
                 {displayRecords.map((r) => (
                   <tr key={r.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-gray-700">{r.studentRef ?? "-"}</td>
-                    <td className="px-4 py-3 text-gray-900">
-                      {`${r.firstName} ${r.lastName}`.trim() || "-"}
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/students/${r.studentId}`}
+                        className="text-blue-500 font-medium hover:underline"
+                      >
+                        {`${r.firstName} ${r.lastName}`.trim() || "-"}
+                      </Link>
                     </td>
                     <td className="px-4 py-3 text-gray-900">{r.excusedHours}</td>
                     <td className="px-4 py-3 text-gray-900">{r.unexcusedHours}</td>

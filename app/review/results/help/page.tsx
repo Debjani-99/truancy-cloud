@@ -69,7 +69,7 @@ export default function HelpPage() {
 
             <li className="flex items-center gap-2">
               <span className="inline-block h-3 w-3 rounded-full bg-red-400" />
-              <strong>Court Warning:</strong> 7% to less than 10% (intervention may be needed)
+              <strong>Court Warning*:</strong> 7% to less than 10% (*Court may consider intervention measures)
             </li>
 
             <li className="flex items-center gap-2">
