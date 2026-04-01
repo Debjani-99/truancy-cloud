@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth";
 
 type StudentPageProps = {
   params: Promise<{ id: string }>;
@@ -8,7 +9,7 @@ type StudentPageProps = {
 
 function calculateTruancyPercent(
   unexcusedHours: number | null | undefined,
-  totalHours: number | null | undefined
+  totalHours: number | null | undefined,
 ) {
   const unexcused = unexcusedHours ?? 0;
   const total = totalHours ?? 0;
@@ -84,9 +85,12 @@ type HistoryRow = {
   };
 };
 
-export default async function StudentDetailPage({
-  params,
-}: StudentPageProps) {
+export default async function StudentDetailPage({ params }: StudentPageProps) {
+  const auth = await requireAuth(["ADMIN", "COURT", "SCHOOL"]);
+  if (auth.error) return auth.error;
+
+  const { session } = auth;
+
   const { id } = await params;
   const studentId = Number(id);
 
@@ -94,27 +98,98 @@ export default async function StudentDetailPage({
     notFound();
   }
 
-  const student = await prisma.student.findUnique({
-    where: { id: studentId },
-    include: {
-      school: true,
-      records: {
-        include: {
-          report: true,
-        },
+  let student:
+    | (Awaited<ReturnType<typeof prisma.student.findFirst>> & {
+        history: HistoryRow[];
+        records: Awaited<
+          ReturnType<typeof prisma.student.findFirst>
+        >["records"];
+      })
+    | null = null;
+
+  if (session.user.role === "ADMIN") {
+    student = await prisma.student.findFirst({
+      where: {
+        id: studentId,
       },
-      history: {
-        include: {
-          report: true,
+      include: {
+        school: true,
+        records: {
+          include: {
+            report: true,
+          },
         },
-        orderBy: {
-          report: {
-            createdAt: "asc",
+        history: {
+          include: {
+            report: true,
+          },
+          orderBy: {
+            report: {
+              createdAt: "asc",
+            },
           },
         },
       },
-    },
-  });
+    });
+  } else if (session.user.role === "COURT") {
+    if (!session.user.countyId) {
+      notFound();
+    }
+    student = await prisma.student.findFirst({
+      where: {
+        id: studentId,
+        school: {
+          countyId: session.user.countyId,
+        },
+      },
+      include: {
+        school: true,
+        records: {
+          include: {
+            report: true,
+          },
+        },
+        history: {
+          include: {
+            report: true,
+          },
+          orderBy: {
+            report: {
+              createdAt: "asc",
+            },
+          },
+        },
+      },
+    });
+  } else if (session.user.role === "SCHOOL") {
+    if (!session.user.schoolId) {
+      notFound();
+    }
+    student = await prisma.student.findFirst({
+      where: {
+        id: studentId,
+        schoolId: session.user.schoolId,
+      },
+      include: {
+        school: true,
+        records: {
+          include: {
+            report: true,
+          },
+        },
+        history: {
+          include: {
+            report: true,
+          },
+          orderBy: {
+            report: {
+              createdAt: "asc",
+            },
+          },
+        },
+      },
+    });
+  }
 
   if (!student) {
     notFound();
@@ -125,13 +200,13 @@ export default async function StudentDetailPage({
       ? [...student.records].sort(
           (a, b) =>
             getSchoolYearStartYear(b.schoolYear) -
-            getSchoolYearStartYear(a.schoolYear)
+            getSchoolYearStartYear(a.schoolYear),
         )[0]
       : null;
 
   const currentTruancyPercent = calculateTruancyPercent(
     latestRecord?.unexcusedHours,
-    latestRecord?.totalHours
+    latestRecord?.totalHours,
   );
 
   const currentStatus = getRiskStatus(currentTruancyPercent);
@@ -180,8 +255,8 @@ export default async function StudentDetailPage({
                   {student.firstName} {student.lastName}
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Attendance summary with detailed metrics, history,
-                  and review context.
+                  Attendance summary with detailed metrics, history, and review
+                  context.
                 </p>
               </div>
             </div>
@@ -223,7 +298,9 @@ export default async function StudentDetailPage({
             </div>
 
             <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-sm font-medium text-slate-500">Quick Summary</p>
+              <p className="text-sm font-medium text-slate-500">
+                Quick Summary
+              </p>
               <dl className="mt-4 space-y-3 text-sm">
                 <SummaryRow
                   label="Unexcused"
@@ -237,10 +314,7 @@ export default async function StudentDetailPage({
                   label="Total Hours"
                   value={formatHours(latestRecord?.totalHours)}
                 />
-                <SummaryRow
-                  label="Snapshots"
-                  value={String(history.length)}
-                />
+                <SummaryRow label="Snapshots" value={String(history.length)} />
               </dl>
             </div>
           </section>
@@ -248,8 +322,14 @@ export default async function StudentDetailPage({
 
         {/* Highlight cards */}
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
-          <StatCard title="Excused" value={formatHours(latestRecord?.excusedHours)} />
-          <StatCard title="Unexcused" value={formatHours(latestRecord?.unexcusedHours)} />
+          <StatCard
+            title="Excused"
+            value={formatHours(latestRecord?.excusedHours)}
+          />
+          <StatCard
+            title="Unexcused"
+            value={formatHours(latestRecord?.unexcusedHours)}
+          />
           <StatCard
             title="Medical"
             value={formatHours(latestRecord?.medicalExcusedHours)}
@@ -258,10 +338,22 @@ export default async function StudentDetailPage({
             title="Suspension"
             value={formatHours(latestRecord?.suspensionHours)}
           />
-          <StatCard title="Added" value={formatHours(latestRecord?.addedHours)} />
-          <StatCard title="Total Abs" value={formatHours(latestRecord?.totalAbsHours)} />
-          <StatCard title="Total Hours" value={formatHours(latestRecord?.totalHours)} />
-          <StatCard title="Absence %" value={`${currentTruancyPercent.toFixed(2)}%`} />
+          <StatCard
+            title="Added"
+            value={formatHours(latestRecord?.addedHours)}
+          />
+          <StatCard
+            title="Total Abs"
+            value={formatHours(latestRecord?.totalAbsHours)}
+          />
+          <StatCard
+            title="Total Hours"
+            value={formatHours(latestRecord?.totalHours)}
+          />
+          <StatCard
+            title="Absence %"
+            value={`${currentTruancyPercent.toFixed(2)}%`}
+          />
         </section>
 
         {/* Middle section */}
@@ -333,7 +425,7 @@ export default async function StudentDetailPage({
                   {history.map((row) => {
                     const rowTruancyPercent = calculateTruancyPercent(
                       row.unexcusedHours,
-                      row.totalHours
+                      row.totalHours,
                     );
                     const rowStatus = getRiskStatus(rowTruancyPercent);
 
@@ -417,7 +509,8 @@ export default async function StudentDetailPage({
                 Saved Notes
               </p>
               <div className="flex min-h-[180px] items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white px-4 text-center text-sm text-slate-500">
-                Saved court notes will appear here once note storage is connected.
+                Saved court notes will appear here once note storage is
+                connected.
               </div>
             </div>
           </div>
@@ -427,13 +520,7 @@ export default async function StudentDetailPage({
   );
 }
 
-function InfoCard({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function InfoCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
       <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
@@ -444,13 +531,7 @@ function InfoCard({
   );
 }
 
-function SummaryRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between border-b border-slate-100 pb-2 last:border-b-0 last:pb-0">
       <dt className="text-slate-500">{label}</dt>
@@ -459,13 +540,7 @@ function SummaryRow({
   );
 }
 
-function StatCard({
-  title,
-  value,
-}: {
-  title: string;
-  value: string;
-}) {
+function StatCard({ title, value }: { title: string; value: string }) {
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
       <p className="text-sm font-medium text-slate-500">{title}</p>
@@ -522,45 +597,45 @@ function RecentChange({ history }: { history: HistoryRow[] }) {
 
   const latestTruancy = calculateTruancyPercent(
     latest.unexcusedHours,
-    latest.totalHours
+    latest.totalHours,
   );
   const previousTruancy = calculateTruancyPercent(
     previous.unexcusedHours,
-    previous.totalHours
+    previous.totalHours,
   );
 
   const truancyDiff = Number((latestTruancy - previousTruancy).toFixed(2));
   const addedHoursDiff = Number(
-    ((latest.addedHours ?? 0) - (previous.addedHours ?? 0)).toFixed(2)
+    ((latest.addedHours ?? 0) - (previous.addedHours ?? 0)).toFixed(2),
   );
 
   const truancyTone =
     truancyDiff > 0
       ? "text-red-700 bg-red-50 border-red-200"
       : truancyDiff < 0
-      ? "text-emerald-700 bg-emerald-50 border-emerald-200"
-      : "text-slate-700 bg-slate-50 border-slate-200";
+        ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+        : "text-slate-700 bg-slate-50 border-slate-200";
 
   const hourTone =
     addedHoursDiff > 0
       ? "text-red-700 bg-red-50 border-red-200"
       : addedHoursDiff < 0
-      ? "text-emerald-700 bg-emerald-50 border-emerald-200"
-      : "text-slate-700 bg-slate-50 border-slate-200";
+        ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+        : "text-slate-700 bg-slate-50 border-slate-200";
 
   const truancyText =
     truancyDiff > 0
       ? `+${truancyDiff.toFixed(2)}% since last report`
       : truancyDiff < 0
-      ? `-${Math.abs(truancyDiff).toFixed(2)}% since last report`
-      : "No truancy change since last report";
+        ? `-${Math.abs(truancyDiff).toFixed(2)}% since last report`
+        : "No truancy change since last report";
 
   const hoursText =
     addedHoursDiff > 0
       ? `+${addedHoursDiff.toFixed(2)} hours since last report`
       : addedHoursDiff < 0
-      ? `-${Math.abs(addedHoursDiff).toFixed(2)} hours since last report`
-      : "No added-hour change since last report";
+        ? `-${Math.abs(addedHoursDiff).toFixed(2)} hours since last report`
+        : "No added-hour change since last report";
 
   return (
     <div className="space-y-4">
@@ -629,11 +704,11 @@ function RiskMessage({
 
   const latestTruancy = calculateTruancyPercent(
     latest.unexcusedHours,
-    latest.totalHours
+    latest.totalHours,
   );
   const previousTruancy = calculateTruancyPercent(
     previous.unexcusedHours,
-    previous.totalHours
+    previous.totalHours,
   );
 
   if (latestTruancy > previousTruancy && latestTruancy >= 7) {
@@ -672,8 +747,8 @@ function RiskMessage({
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">
-      Current attendance data is available. Continue monitoring future
-      snapshots for clearer trend information.
+      Current attendance data is available. Continue monitoring future snapshots
+      for clearer trend information.
     </div>
   );
 }
