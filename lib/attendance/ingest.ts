@@ -70,6 +70,45 @@ export async function ingestAttendance(params: IngestParams): Promise<IngestResu
         },
       });
 
+      const previousSnapshot = await tx.attendanceHistory.findFirst({
+        where: {
+          studentId: student.id,
+          schoolYear,
+          reportId: { not: report.id },
+        },
+        orderBy: { report: { createdAt: "desc" } },
+      });
+
+      const addedHours = previousSnapshot
+      ? record.totalAbsHours - previousSnapshot.totalAbsHours
+      : 0;
+
+      await tx.attendanceHistory.upsert({
+        where: {studentId_reportId: { studentId: student.id, reportId: report.id}},
+        update:{
+          schoolYear,
+          excusedHours: record.excusedHours,
+          unexcusedHours: record.unexcusedHours,
+          medicalExcusedHours: record.medicalExcusedHours,
+          suspensionHours: record.suspensionHours,
+          totalHours: record.totalHours,
+          totalAbsHours: record.totalAbsHours,
+          addedHours,
+        },
+        create:{
+          studentId: student.id,
+          reportId: report.id,
+          schoolYear,
+          excusedHours: record.excusedHours,
+          unexcusedHours: record.unexcusedHours,
+          medicalExcusedHours: record.medicalExcusedHours,
+          suspensionHours: record.suspensionHours,
+          totalHours: record.totalHours,
+          totalAbsHours: record.totalAbsHours,
+          addedHours,
+        },
+      });
+
       inserted++;
     }
 

@@ -6,6 +6,8 @@ const mockStudentFindUnique = vi.fn();
 const mockStudentFindFirst = vi.fn();
 const mockStudentCreate = vi.fn();
 const mockRecordUpsert = vi.fn();
+const mockHistoryFindFirst = vi.fn();
+const mockHistoryUpsert = vi.fn();
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -18,6 +20,10 @@ vi.mock("@/lib/prisma", () => ({
           create: mockStudentCreate,
         },
         attendanceRecord: { upsert: mockRecordUpsert },
+        attendanceHistory: {
+          findFirst: mockHistoryFindFirst,
+          upsert: mockHistoryUpsert,
+        },
       }),
   },
 }));
@@ -34,6 +40,7 @@ const baseRecord: NormalizedRecord = {
   medicalExcusedHours: 0.5,
   suspensionHours: 0.0,
   totalAbsHours: 4.0,
+  totalHours: 100,
 };
 
 const baseParams = {
@@ -49,6 +56,8 @@ describe("ingestAttendance", () => {
     mockReportUpsert.mockResolvedValue({ id: 10 });
     mockStudentFindUnique.mockResolvedValue({ id: 1 });
     mockRecordUpsert.mockResolvedValue({});
+    mockHistoryFindFirst.mockResolvedValue(null);
+    mockHistoryUpsert.mockResolvedValue({});
   });
 
   it("inserts a new report and attendance record", async () => {
@@ -122,5 +131,78 @@ describe("ingestAttendance", () => {
 
     const result = await ingestAttendance({ ...baseParams, validRecords: records });
     expect(result.inserted).toBe(2);
+  });
+
+  it("upserts a history row for each unique processed record", async() => {
+    await ingestAttendance(baseParams);
+
+    expect(mockHistoryUpsert).toHaveBeenCalledTimes(1);
+    expect(mockHistoryUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { studentId_reportId: { studentId: 1, reportId: 10}},
+        create: expect.objectContaining({ studentId: 1, reportId: 10, schoolYear:"2024-2025"}),
+      })
+    );
+  });
+
+  it("sets addedHours to 0 when no previous snapshot exists", async () => {
+    mockHistoryFindFirst.mockResolvedValue(null);
+    await ingestAttendance(baseParams);
+    expect(mockHistoryUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ addedHours: 0}),
+        update: expect.objectContaining({ addedHours: 0}),
+      })
+    );
+  });
+
+  it("calculates addedHours with diff from most recent snapshot", async () => {
+    mockHistoryFindFirst.mockResolvedValue({ totalAbsHours: 2.5});
+    await ingestAttendance(baseParams);
+    expect(mockHistoryUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ addedHours: 1.5}),
+        update: expect.objectContaining({ addedHours: 1.5}),
+      })
+    );
+  });
+
+  it("queries previous snapshot excluding the current reportId", async () => {
+    await ingestAttendance(baseParams);
+
+    expect(mockHistoryFindFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          studentId: 1,
+          schoolYear: "2024-2025",
+          reportId: { not: 10 },
+        }),
+        orderBy: { report: { createdAt: "desc" } },
+      })
+    );
+  });
+
+  it("reprocessing the same upload upserts history without duplicating", async () => {
+    await ingestAttendance(baseParams);
+    await ingestAttendance(baseParams);
+
+    // upsert called twice (once per run) but uses same unique key — no duplicates
+    expect(mockHistoryUpsert).toHaveBeenCalledTimes(2);
+    const calls = mockHistoryUpsert.mock.calls;
+    expect(calls[0][0].where).toEqual(calls[1][0].where);
+  });
+
+  it("creates one history row per student when multiple records are processed", async () => {
+    const records: NormalizedRecord[] = [
+      { ...baseRecord, studentRef: "S001" },
+      { ...baseRecord, studentRef: "S002", firstName: "Jane", lastName: "Doe" },
+    ];
+    mockStudentFindUnique
+      .mockResolvedValueOnce({ id: 1 })
+      .mockResolvedValueOnce({ id: 2 });
+
+    await ingestAttendance({ ...baseParams, validRecords: records });
+
+    expect(mockHistoryUpsert).toHaveBeenCalledTimes(2);
   });
 });
