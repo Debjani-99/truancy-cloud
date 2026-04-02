@@ -300,7 +300,7 @@ export default async function StudentDetailPage({ params }: StudentPageProps) {
                   label="Total Hours"
                   value={formatHours(latestRecord?.totalHours)}
                 />
-                <SummaryRow label="Snapshots" value={String(history.length)} />
+                <SummaryRow label="Snapshots" value={String(preparedHistory.length)} />
               </dl>
             </div>
           </section>
@@ -408,13 +408,7 @@ export default async function StudentDetailPage({ params }: StudentPageProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {history.map((row) => {
-                    const rowTruancyPercent = calculateTruancyPercent(
-                      row.unexcusedHours,
-                      row.totalHours,
-                    );
-                    const rowStatus = getRiskStatus(rowTruancyPercent);
-
+                  {preparedHistory.map((row) => {
                     return (
                       <tr key={row.id} className="hover:bg-slate-50">
                         <td className="px-4 py-3 text-slate-700">
@@ -445,13 +439,13 @@ export default async function StudentDetailPage({ params }: StudentPageProps) {
                           {formatHours(row.totalHours)}
                         </td>
                         <td className="px-4 py-3 font-semibold text-slate-900">
-                          {rowTruancyPercent.toFixed(2)}%
+                          {row.truancyPercent.toFixed(2)}%
                         </td>
                         <td className="px-4 py-3">
                           <span
-                            className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${rowStatus.badgeClass}`}
+                            className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${row.status.badgeClass}`}
                           >
-                            {rowStatus.label}
+                            {row.status.label}
                           </span>
                         </td>
                       </tr>
@@ -609,32 +603,32 @@ function RecentChange({ history }: { history: HistoryRow[] }) {
         ? "text-emerald-700 bg-emerald-50 border-emerald-200"
         : "text-slate-700 bg-slate-50 border-slate-200";
 
-  const truancyText =
-    truancyDiff > 0
-      ? `+${truancyDiff.toFixed(2)}% since last report`
-      : truancyDiff < 0
-        ? `-${Math.abs(truancyDiff).toFixed(2)}% since last report`
-        : "No truancy change since last report";
+ const truancyText =
+  truancyDiff === 0
+    ? "No change in absence percentage since the last report."
+    : truancyDiff > 0
+    ? `Absence percentage increased by ${truancyDiff.toFixed(2)}% since the last report.`
+    : `Absence percentage decreased by ${Math.abs(truancyDiff).toFixed(2)}% since the last report.`;
 
   const hoursText =
-    addedHoursDiff > 0
-      ? `+${addedHoursDiff.toFixed(2)} hours since last report`
-      : addedHoursDiff < 0
-        ? `-${Math.abs(addedHoursDiff).toFixed(2)} hours since last report`
-        : "No added-hour change since last report";
+  addedHoursDiff === 0
+    ? "No new hours were added compared to the previous report."
+    : addedHoursDiff > 0
+    ? `${addedHoursDiff.toFixed(2)} more hours were added compared to the previous report.`
+    : `${Math.abs(addedHoursDiff).toFixed(2)} fewer hours were added compared to the previous report.`;
 
   return (
     <div className="space-y-4">
       <div className={`rounded-2xl border p-4 ${truancyTone}`}>
         <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
-          Absence %
+          Absence Related
         </p>
         <p className="mt-2 text-base font-semibold">{truancyText}</p>
       </div>
 
       <div className={`rounded-2xl border p-4 ${hourTone}`}>
         <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
-          Added Hours
+          Hours Related
         </p>
         <p className="mt-2 text-base font-semibold">{hoursText}</p>
       </div>
