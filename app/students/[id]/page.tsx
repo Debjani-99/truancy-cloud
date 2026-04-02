@@ -353,17 +353,17 @@ export default async function StudentDetailPage({ params }: StudentPageProps) {
         {/* Middle section */}
         <section className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
           <Panel
-            title="Truancy Trend"
-            subtitle="Trend chart will use snapshot history when available."
+            title="Absence Trend"
+            subtitle="Upload date on the x-axis and absence percentage on the y-axis."
           >
-            <EmptyPanel
-              message={
-                history.length <= 1
-                  ? "Not enough snapshot data to show a trend yet."
-                  : "Trend chart integration is coming soon."
-              }
-              tall
-            />
+            {chartData.length <= 1 ? (
+              <EmptyPanel
+                message="Trend will appear once more snapshots are available."
+                tall
+              />
+            ) : (
+              <TrendChart data={chartData} />
+            )}
           </Panel>
 
           <div className="space-y-6">
@@ -575,6 +575,143 @@ function EmptyPanel({
       }`}
     >
       {message}
+    </div>
+  );
+}
+
+function TrendChart({
+  data,
+}: {
+  data: {
+    uploadDate: string;
+    truancyPercent: number;
+    unexcusedHours: number;
+    totalAbsHours: number;
+    addedHours: number;
+  }[];
+}) {
+  const width = 640;
+  const height = 260;
+  const padding = 32;
+
+  const maxY = Math.max(...data.map((p) => p.truancyPercent), 10);
+  const usableWidth = width - padding * 2;
+  const usableHeight = height - padding * 2;
+
+  const points = data.map((point, index) => {
+    const x =
+      data.length === 1
+        ? width / 2
+        : padding + (index / (data.length - 1)) * usableWidth;
+
+    const y =
+      padding +
+      usableHeight -
+      (point.truancyPercent / maxY) * usableHeight;
+
+    return { ...point, x, y };
+  });
+
+  const polylinePoints = points.map((p) => `${p.x},${p.y}`).join(" ");
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          className="h-[260px] w-full"
+        >
+          {/* Axes */}
+          <line
+            x1={padding}
+            y1={padding}
+            x2={padding}
+            y2={height - padding}
+            className="stroke-slate-300"
+          />
+          <line
+            x1={padding}
+            y1={height - padding}
+            x2={width - padding}
+            y2={height - padding}
+            className="stroke-slate-300"
+          />
+
+          {/* Grid lines */}
+          {[0, 0.25, 0.5, 0.75, 1].map((step) => {
+            const y = padding + usableHeight - usableHeight * step;
+            const label = (maxY * step).toFixed(0);
+
+            return (
+              <g key={step}>
+                <line
+                  x1={padding}
+                  y1={y}
+                  x2={width - padding}
+                  y2={y}
+                  className="stroke-slate-200"
+                  strokeDasharray="4 4"
+                />
+                <text
+                  x={padding - 8}
+                  y={y + 4}
+                  textAnchor="end"
+                  className="fill-slate-500 text-[10px]"
+                >
+                  {label}%
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Line */}
+          <polyline
+            fill="none"
+            points={polylinePoints}
+            className="stroke-slate-900"
+            strokeWidth="3"
+          />
+
+          {/* Points + tooltip */}
+          {points.map((p) => (
+            <g key={`${p.uploadDate}-${p.x}`}>
+              <title>
+                {`${p.uploadDate}
+Truancy: ${p.truancyPercent.toFixed(2)}%
+Unexcused: ${p.unexcusedHours}
+Total Abs: ${p.totalAbsHours}
+Added: ${p.addedHours}`}
+              </title>
+              <circle cx={p.x} cy={p.y} r="5" className="fill-slate-900" />
+            </g>
+          ))}
+
+          {/* X-axis labels */}
+          {points.map((p) => (
+            <text
+              key={`${p.uploadDate}-label`}
+              x={p.x}
+              y={height - 10}
+              textAnchor="middle"
+              className="fill-slate-500 text-[10px]"
+            >
+              {p.uploadDate}
+            </text>
+          ))}
+        </svg>
+      </div>
+
+      <div className="grid gap-2 text-sm text-slate-600 sm:grid-cols-3">
+        <div className="rounded-xl border bg-slate-50 px-3 py-2">
+          <span className="font-medium text-slate-900">X-axis:</span> Upload date
+        </div>
+        <div className="rounded-xl border bg-slate-50 px-3 py-2">
+          <span className="font-medium text-slate-900">Y-axis:</span> Truancy %
+        </div>
+        <div className="rounded-xl border bg-slate-50 px-3 py-2">
+          <span className="font-medium text-slate-900">Tooltip:</span> Details on hover
+        </div>
+      </div>
     </div>
   );
 }
