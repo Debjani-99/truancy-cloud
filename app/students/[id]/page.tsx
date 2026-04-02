@@ -190,28 +190,54 @@ export default async function StudentDetailPage({ params }: StudentPageProps) {
 
   const chartData = preparedHistory.map((row) => ({
     uploadDate: formatDate(row.report.createdAt),
-    truancyPercent: row.truancyPercent,
+    absencePercent: row.truancyPercent,
+    excusedHours: row.excusedHours ?? 0,
     unexcusedHours: row.unexcusedHours ?? 0,
+    medicalExcusedHours: row.medicalExcusedHours ?? 0,
+    suspensionHours: row.suspensionHours ?? 0,
     totalAbsHours: row.totalAbsHours ?? 0,
+    totalHours: row.totalHours ?? 0,
     addedHours: row.addedHours ?? 0,
   }));
 
-  const latestHistory =
-    preparedHistory.length > 0
-      ? preparedHistory[preparedHistory.length - 1]
-      : null;
+  
+const latestHistory =
+  preparedHistory.length > 0
+    ? preparedHistory[preparedHistory.length - 1]
+    : null;
 
-  const previousHistory =
-    preparedHistory.length > 1
-      ? preparedHistory[preparedHistory.length - 2]
-      : null;
+const previousHistory =
+  preparedHistory.length > 1
+    ? preparedHistory[preparedHistory.length - 2]
+    : null;
+
+const snapshotCount = preparedHistory.length;
+const latestUploadDate = formatDate(latestHistory?.report.createdAt);
+
+const hasComparison = !!latestHistory && !!previousHistory;
+
+const truancyDiff = hasComparison
+  ? Number(
+      (
+        latestHistory.truancyPercent - previousHistory.truancyPercent
+      ).toFixed(2),
+    )
+  : 0;
+
+const addedHoursTrendDiff = hasComparison
+  ? Number(
+      (
+        (latestHistory.addedHours ?? 0) - (previousHistory.addedHours ?? 0)
+      ).toFixed(2),
+    )
+  : 0;
 
   const backHref = latestRecord?.report?.uploadId
     ? `/review/results?uploadId=${latestRecord.report.uploadId}`
     : "/review";
 
   const hasHistory = preparedHistory.length > 0;
-  const hasEnoughHistoryForComparison = preparedHistory.length > 1;
+  const hasEnoughHistoryForComparison = hasComparison;
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-6 md:px-6 md:py-8">
@@ -249,8 +275,7 @@ export default async function StudentDetailPage({ params }: StudentPageProps) {
                   {student.firstName} {student.lastName}
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Attendance summary with detailed metrics, history, and review
-                  context.
+                  Current attendance status, snapshot history, and trend overview for review
                 </p>
               </div>
             </div>
@@ -584,17 +609,22 @@ function TrendChart({
 }: {
   data: {
     uploadDate: string;
-    truancyPercent: number;
+    reportDate: Date;
+    absencePercent: number;
+    excusedHours: number;
     unexcusedHours: number;
+    medicalExcusedHours: number;
+    suspensionHours: number;
     totalAbsHours: number;
+    totalHours: number;
     addedHours: number;
   }[];
 }) {
   const width = 640;
   const height = 260;
-  const padding = 32;
+  const padding = 40;
 
-  const maxY = Math.max(...data.map((p) => p.truancyPercent), 10);
+  const maxY = Math.max(...data.map((p) => p.absencePercent), 10);
   const usableWidth = width - padding * 2;
   const usableHeight = height - padding * 2;
 
@@ -607,40 +637,26 @@ function TrendChart({
     const y =
       padding +
       usableHeight -
-      (point.truancyPercent / maxY) * usableHeight;
+      (point.absencePercent / maxY) * usableHeight;
 
     return { ...point, x, y };
   });
 
   const polylinePoints = points.map((p) => `${p.x},${p.y}`).join(" ");
+  const latestPoint = points[points.length - 1];
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <svg
           viewBox={`0 0 ${width} ${height}`}
           className="h-[260px] w-full"
+          role="img"
+          aria-label="Absence trend chart"
         >
-          {/* Axes */}
-          <line
-            x1={padding}
-            y1={padding}
-            x2={padding}
-            y2={height - padding}
-            className="stroke-slate-300"
-          />
-          <line
-            x1={padding}
-            y1={height - padding}
-            x2={width - padding}
-            y2={height - padding}
-            className="stroke-slate-300"
-          />
-
-          {/* Grid lines */}
           {[0, 0.25, 0.5, 0.75, 1].map((step) => {
             const y = padding + usableHeight - usableHeight * step;
-            const label = (maxY * step).toFixed(0);
+            const label = `${(maxY * step).toFixed(0)}%`;
 
             return (
               <g key={step}>
@@ -649,51 +665,65 @@ function TrendChart({
                   y1={y}
                   x2={width - padding}
                   y2={y}
-                  className="stroke-slate-200"
+                  stroke="#E2E8F0"
                   strokeDasharray="4 4"
                 />
                 <text
-                  x={padding - 8}
+                  x={padding - 10}
                   y={y + 4}
                   textAnchor="end"
-                  className="fill-slate-500 text-[10px]"
+                  fontSize="10"
+                  fill="#64748B"
                 >
-                  {label}%
+                  {label}
                 </text>
               </g>
             );
           })}
 
-          {/* Line */}
+          <line
+            x1={padding}
+            y1={padding}
+            x2={padding}
+            y2={height - padding}
+            stroke="#CBD5E1"
+          />
+          <line
+            x1={padding}
+            y1={height - padding}
+            x2={width - padding}
+            y2={height - padding}
+            stroke="#CBD5E1"
+          />
+
           <polyline
             fill="none"
             points={polylinePoints}
-            className="stroke-slate-900"
+            stroke="#0F172A"
             strokeWidth="3"
+            strokeLinejoin="round"
+            strokeLinecap="round"
           />
 
-          {/* Points + tooltip */}
-          {points.map((p) => (
-            <g key={`${p.uploadDate}-${p.x}`}>
-              <title>
-                {`${p.uploadDate}
-Truancy: ${p.truancyPercent.toFixed(2)}%
-Unexcused: ${p.unexcusedHours}
-Total Abs: ${p.totalAbsHours}
-Added: ${p.addedHours}`}
-              </title>
-              <circle cx={p.x} cy={p.y} r="5" className="fill-slate-900" />
+          {points.map((p, index) => (
+            <g key={`${p.uploadDate}-${index}`}>
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r="5"
+                fill="#0F172A"
+              />
             </g>
           ))}
 
-          {/* X-axis labels */}
-          {points.map((p) => (
+          {points.map((p, index) => (
             <text
-              key={`${p.uploadDate}-label`}
+              key={`${p.uploadDate}-label-${index}`}
               x={p.x}
-              y={height - 10}
+              y={height - 12}
               textAnchor="middle"
-              className="fill-slate-500 text-[10px]"
+              fontSize="10"
+              fill="#64748B"
             >
               {p.uploadDate}
             </text>
@@ -701,15 +731,41 @@ Added: ${p.addedHours}`}
         </svg>
       </div>
 
-      <div className="grid gap-2 text-sm text-slate-600 sm:grid-cols-3">
-        <div className="rounded-xl border bg-slate-50 px-3 py-2">
-          <span className="font-medium text-slate-900">X-axis:</span> Upload date
+      <div className="grid gap-3 md:grid-cols-4">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Latest Upload
+          </p>
+          <p className="mt-1 text-sm font-semibold text-slate-900">
+            {latestPoint.uploadDate}
+          </p>
         </div>
-        <div className="rounded-xl border bg-slate-50 px-3 py-2">
-          <span className="font-medium text-slate-900">Y-axis:</span> Truancy %
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Latest Absence %
+          </p>
+          <p className="mt-1 text-sm font-semibold text-slate-900">
+            {latestPoint.absencePercent.toFixed(2)}%
+          </p>
         </div>
-        <div className="rounded-xl border bg-slate-50 px-3 py-2">
-          <span className="font-medium text-slate-900">Tooltip:</span> Details on hover
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Unexcused Hours
+          </p>
+          <p className="mt-1 text-sm font-semibold text-slate-900">
+            {latestPoint.unexcusedHours.toFixed(2)}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Total Abs Hours
+          </p>
+          <p className="mt-1 text-sm font-semibold text-slate-900">
+            {latestPoint.totalAbsHours.toFixed(2)}
+          </p>
         </div>
       </div>
     </div>
