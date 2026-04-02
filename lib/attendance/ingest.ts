@@ -21,9 +21,12 @@ export async function ingestAttendance(params: IngestParams): Promise<IngestResu
       where: { uploadId },
       update: {},
       create: { uploadId, schoolId, schoolYear },
+      include: {
+        upload: true,
+      },
     });
 
-    const currentReportCreatedAt = report.createdAt;
+    const currentUploadUploadedAt = report.upload.uploadedAt;
 
     let inserted = 0;
 
@@ -52,14 +55,18 @@ export async function ingestAttendance(params: IngestParams): Promise<IngestResu
           studentId: student.id,
           schoolYear,
           report: {
-            createdAt: {
-              lt: currentReportCreatedAt,
+             upload: {
+                uploadedAt: {
+                  lt: currentUploadUploadedAt,
+                },
+              },
             },
-          },
         },
         orderBy: {
           report: {
-            createdAt: "desc",
+            upload: {
+              uploadedAt: "desc",
+            }
           },
         },
       });
