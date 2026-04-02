@@ -114,7 +114,7 @@ function ResultsInner() {
           </div>
 
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push("/review")}
             className="mt-4 rounded-md border px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
           >
             Back

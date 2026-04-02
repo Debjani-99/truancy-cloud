@@ -91,7 +91,7 @@ export default async function StudentDetailPage({ params }: StudentPageProps) {
     redirect("/login");
     }
     
-    const session = auth.session;
+  const session = auth.session;
 
   const { id } = await params;
   const studentId = Number(id);
@@ -175,12 +175,35 @@ export default async function StudentDetailPage({ params }: StudentPageProps) {
   const currentStatus = getRiskStatus(currentTruancyPercent);
   const history = student.history as HistoryRow[];
 
+  const preparedHistory = [...history].map((row) => {
+  const truancyPercent = calculateTruancyPercent(
+    row.unexcusedHours,
+    row.totalHours,
+  );
+
+    return {
+      ...row,
+      truancyPercent,
+      status: getRiskStatus(truancyPercent),
+    };
+  });
+
+  const latestHistory =
+    preparedHistory.length > 0
+      ? preparedHistory[preparedHistory.length - 1]
+      : null;
+
+  const previousHistory =
+    preparedHistory.length > 1
+      ? preparedHistory[preparedHistory.length - 2]
+      : null;
+
   const backHref = latestRecord?.report?.uploadId
     ? `/review/results?uploadId=${latestRecord.report.uploadId}`
     : "/review";
 
-  const hasHistory = history.length > 0;
-  const hasEnoughHistoryForComparison = history.length > 1;
+  const hasHistory = preparedHistory.length > 0;
+  const hasEnoughHistoryForComparison = preparedHistory.length > 1;
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-6 md:px-6 md:py-8">
@@ -604,7 +627,7 @@ function RecentChange({ history }: { history: HistoryRow[] }) {
     <div className="space-y-4">
       <div className={`rounded-2xl border p-4 ${truancyTone}`}>
         <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
-          Truancy %
+          Absence %
         </p>
         <p className="mt-2 text-base font-semibold">{truancyText}</p>
       </div>
