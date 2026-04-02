@@ -121,7 +121,7 @@ export async function ingestAttendance(params: IngestParams): Promise<IngestResu
         // One record per student per school year — latest upload always wins.
         where: { studentId_schoolYear: { studentId: student.id, schoolYear } },
         update: {
-          reportId: latestSnapshot.id, // track which upload produced this data
+          reportId: latestSnapshot.reportId, // track which upload produced this data
           excusedHours: latestSnapshot.excusedHours,
           unexcusedHours: latestSnapshot.unexcusedHours,
           medicalExcusedHours: latestSnapshot.medicalExcusedHours,
@@ -131,7 +131,7 @@ export async function ingestAttendance(params: IngestParams): Promise<IngestResu
           addedHours: latestSnapshot.addedHours,
         },
         create: {
-          reportId: latestSnapshot.id,
+          reportId: latestSnapshot.reportId,
           studentId: student.id,
           schoolYear,
           excusedHours: latestSnapshot.excusedHours,
