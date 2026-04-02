@@ -23,6 +23,8 @@ export async function ingestAttendance(params: IngestParams): Promise<IngestResu
       create: { uploadId, schoolId, schoolYear },
     });
 
+    const currentReportCreatedAt = report.createdAt;
+
     let inserted = 0;
 
     for (const record of validRecords) {
@@ -74,9 +76,17 @@ export async function ingestAttendance(params: IngestParams): Promise<IngestResu
         where: {
           studentId: student.id,
           schoolYear,
-          reportId: { not: report.id },
+          report: {
+            createdAt: {
+              lt: currentReportCreatedAt,
+            },
+          },
         },
-        orderBy: { report: { createdAt: "desc" } },
+        orderBy: {
+          report: {
+            createdAt: "desc",
+          },
+        },
       });
 
       const addedHours = previousSnapshot
