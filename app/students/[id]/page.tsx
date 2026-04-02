@@ -188,6 +188,14 @@ export default async function StudentDetailPage({ params }: StudentPageProps) {
     };
   });
 
+  const chartData = preparedHistory.map((row) => ({
+    uploadDate: formatDate(row.report.createdAt),
+    truancyPercent: row.truancyPercent,
+    unexcusedHours: row.unexcusedHours ?? 0,
+    totalAbsHours: row.totalAbsHours ?? 0,
+    addedHours: row.addedHours ?? 0,
+  }));
+
   const latestHistory =
     preparedHistory.length > 0
       ? preparedHistory[preparedHistory.length - 1]
