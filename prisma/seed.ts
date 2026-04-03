@@ -68,6 +68,7 @@ async function main() {
       email: "admin@secondbell.dev",
       passwordHash,
       role: "ADMIN",
+      firstTimeUser: false,
     },
   });
 
@@ -82,6 +83,7 @@ async function main() {
       passwordHash,
       role: "COURT",
       countyId: champaign.id,
+      firstTimeUser: false,
     },
   });
 
@@ -95,6 +97,7 @@ async function main() {
       passwordHash,
       role: "COURT",
       countyId: clark.id,
+      firstTimeUser: false,
     },
   });
 
@@ -109,6 +112,7 @@ async function main() {
       passwordHash,
       role: "SCHOOL",
       schoolId: urbana.id,
+      firstTimeUser: false
     },
   });
 
@@ -122,6 +126,7 @@ async function main() {
       passwordHash,
       role: "SCHOOL",
       schoolId: graham.id,
+      firstTimeUser: false,
     },
   });
 
@@ -135,10 +140,11 @@ async function main() {
       passwordHash,
       role: "SCHOOL",
       schoolId: springfield.id,
+      firstTimeUser: false,
     },
   });
 
-  // Seed school user for password change (scoped to Graham High School)
+  // Seed admin user for password change 
   await prisma.user.upsert({
     where: { email: "truancycloud@gmail.com" },
     update: {},
@@ -148,7 +154,22 @@ async function main() {
       email: "truancycloud@gmail.com",
       passwordHash,
       role: "ADMIN",
-    },
+      firstTimeUser: false,
+    },  
+  });
+
+  // Seed parent user with account setup
+  await prisma.user.upsert({
+    where: { email: "parentaccount@secondbell.dev" },
+    update: {},
+    create: {
+      firstName: "Parent",
+      lastName: "Account",
+      email: "parentaccount@secondbell.dev",
+      passwordHash,
+      role: "PARENT",
+      firstTimeUser: false,
+    },  
   });
 
   console.log("Seed complete:");
