@@ -190,6 +190,7 @@ export default async function StudentDetailPage({ params }: StudentPageProps) {
 
   const chartData = preparedHistory.map((row) => ({
     uploadDate: formatDate(row.report.createdAt),
+    reportDate: row.report.createdAt,
     absencePercent: row.truancyPercent,
     excusedHours: row.excusedHours ?? 0,
     unexcusedHours: row.unexcusedHours ?? 0,
