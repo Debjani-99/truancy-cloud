@@ -45,67 +45,102 @@ export async function ingestAttendance(params: IngestParams): Promise<IngestResu
         });
       }
 
+      await tx.attendanceHistory.upsert({
+        where: {
+          studentId_reportId: {
+            studentId: student.id,
+            reportId: report.id,
+          },
+        },
+        update: {
+          schoolYear,
+          excusedHours: record.excusedHours,
+          unexcusedHours: record.unexcusedHours,
+          medicalExcusedHours: record.medicalExcusedHours,
+          suspensionHours: record.suspensionHours,
+          totalHours: record.totalHours,
+          totalAbsHours: record.totalAbsHours,
+          addedHours: 0,
+        },
+        create: {
+          studentId: student.id,
+          reportId: report.id,
+          schoolYear,
+          excusedHours: record.excusedHours,
+          unexcusedHours: record.unexcusedHours,
+          medicalExcusedHours: record.medicalExcusedHours,
+          suspensionHours: record.suspensionHours,
+          totalHours: record.totalHours,
+          totalAbsHours: record.totalAbsHours,
+          addedHours: 0,
+        },
+      });
+
+    const historyRows = await tx.attendanceHistory.findMany({
+        where: {
+          studentId: student.id,
+          schoolYear,
+        },
+        include: {
+          report: {
+            include: {
+              upload: true,
+            },
+          },
+        },
+        orderBy: {
+          report: {
+            upload: {
+              uploadedAt: "asc",
+            },
+          },
+        },
+      });
+
+      for (let i = 0; i < historyRows.length; i++) {
+        const currentRow = historyRows[i];
+        const previousRow = i > 0 ? historyRows[i - 1] : null;
+
+        const recalculatedAddedHours = previousRow
+          ? currentRow.totalAbsHours - previousRow.totalAbsHours
+          : 0;
+
+        await tx.attendanceHistory.update({
+          where: { id: currentRow.id },
+          data: {
+            addedHours: recalculatedAddedHours,
+          },
+        });
+
+        currentRow.addedHours = recalculatedAddedHours;
+      }
+
+      const latestSnapshot = historyRows[historyRows.length - 1];
+
       await tx.attendanceRecord.upsert({
         // One record per student per school year — latest upload always wins.
         where: { studentId_schoolYear: { studentId: student.id, schoolYear } },
         update: {
-          reportId: report.id, // track which upload produced this data
-          excusedHours: record.excusedHours,
-          unexcusedHours: record.unexcusedHours,
-          medicalExcusedHours: record.medicalExcusedHours,
-          suspensionHours: record.suspensionHours,
-          totalHours: record.totalHours,
-          totalAbsHours: record.totalAbsHours,
+          reportId: latestSnapshot.reportId, // track which upload produced this data
+          excusedHours: latestSnapshot.excusedHours,
+          unexcusedHours: latestSnapshot.unexcusedHours,
+          medicalExcusedHours: latestSnapshot.medicalExcusedHours,
+          suspensionHours: latestSnapshot.suspensionHours,
+          totalHours:latestSnapshot.totalHours,
+          totalAbsHours: latestSnapshot.totalAbsHours,
+          addedHours: latestSnapshot.addedHours,
         },
         create: {
-          reportId: report.id,
+          reportId: latestSnapshot.reportId,
           studentId: student.id,
           schoolYear,
-          excusedHours: record.excusedHours,
-          unexcusedHours: record.unexcusedHours,
-          medicalExcusedHours: record.medicalExcusedHours,
-          suspensionHours: record.suspensionHours,
-          totalHours: record.totalHours,
-          totalAbsHours: record.totalAbsHours,
-        },
-      });
-
-      const previousSnapshot = await tx.attendanceHistory.findFirst({
-        where: {
-          studentId: student.id,
-          schoolYear,
-          reportId: { not: report.id },
-        },
-        orderBy: { report: { createdAt: "desc" } },
-      });
-
-      const addedHours = previousSnapshot
-      ? record.totalAbsHours - previousSnapshot.totalAbsHours
-      : 0;
-
-      await tx.attendanceHistory.upsert({
-        where: {studentId_reportId: { studentId: student.id, reportId: report.id}},
-        update:{
-          schoolYear,
-          excusedHours: record.excusedHours,
-          unexcusedHours: record.unexcusedHours,
-          medicalExcusedHours: record.medicalExcusedHours,
-          suspensionHours: record.suspensionHours,
-          totalHours: record.totalHours,
-          totalAbsHours: record.totalAbsHours,
-          addedHours,
-        },
-        create:{
-          studentId: student.id,
-          reportId: report.id,
-          schoolYear,
-          excusedHours: record.excusedHours,
-          unexcusedHours: record.unexcusedHours,
-          medicalExcusedHours: record.medicalExcusedHours,
-          suspensionHours: record.suspensionHours,
-          totalHours: record.totalHours,
-          totalAbsHours: record.totalAbsHours,
-          addedHours,
+          excusedHours: latestSnapshot.excusedHours,
+          unexcusedHours: latestSnapshot.unexcusedHours,
+          medicalExcusedHours: latestSnapshot.medicalExcusedHours,
+          suspensionHours: latestSnapshot.suspensionHours,
+          totalHours: latestSnapshot.totalHours,
+          totalAbsHours: latestSnapshot.totalAbsHours,
+          addedHours: latestSnapshot.addedHours,
         },
       });
 

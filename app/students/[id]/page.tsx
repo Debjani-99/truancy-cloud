@@ -91,7 +91,7 @@ export default async function StudentDetailPage({ params }: StudentPageProps) {
     redirect("/login");
     }
     
-    const session = auth.session;
+  const session = auth.session;
 
   const { id } = await params;
   const studentId = Number(id);
@@ -175,12 +175,70 @@ export default async function StudentDetailPage({ params }: StudentPageProps) {
   const currentStatus = getRiskStatus(currentTruancyPercent);
   const history = student.history as HistoryRow[];
 
+  const preparedHistory = [...history].map((row) => {
+  const truancyPercent = calculateTruancyPercent(
+    row.unexcusedHours,
+    row.totalHours,
+  );
+
+    return {
+      ...row,
+      truancyPercent,
+      status: getRiskStatus(truancyPercent),
+    };
+  });
+
+  const chartData = preparedHistory.map((row) => ({
+    uploadDate: formatDate(row.report.createdAt),
+    reportDate: row.report.createdAt,
+    absencePercent: row.truancyPercent,
+    excusedHours: row.excusedHours ?? 0,
+    unexcusedHours: row.unexcusedHours ?? 0,
+    medicalExcusedHours: row.medicalExcusedHours ?? 0,
+    suspensionHours: row.suspensionHours ?? 0,
+    totalAbsHours: row.totalAbsHours ?? 0,
+    totalHours: row.totalHours ?? 0,
+    addedHours: row.addedHours ?? 0,
+  }));
+
+  
+const latestHistory =
+  preparedHistory.length > 0
+    ? preparedHistory[preparedHistory.length - 1]
+    : null;
+
+const previousHistory =
+  preparedHistory.length > 1
+    ? preparedHistory[preparedHistory.length - 2]
+    : null;
+
+const snapshotCount = preparedHistory.length;
+const latestUploadDate = formatDate(latestHistory?.report.createdAt);
+
+const hasComparison = !!latestHistory && !!previousHistory;
+
+const truancyDiff = hasComparison
+  ? Number(
+      (
+        latestHistory.truancyPercent - previousHistory.truancyPercent
+      ).toFixed(2),
+    )
+  : 0;
+
+const addedHoursTrendDiff = hasComparison
+  ? Number(
+      (
+        (latestHistory.addedHours ?? 0) - (previousHistory.addedHours ?? 0)
+      ).toFixed(2),
+    )
+  : 0;
+
   const backHref = latestRecord?.report?.uploadId
     ? `/review/results?uploadId=${latestRecord.report.uploadId}`
     : "/review";
 
-  const hasHistory = history.length > 0;
-  const hasEnoughHistoryForComparison = history.length > 1;
+  const hasHistory = preparedHistory.length > 0;
+  const hasEnoughHistoryForComparison = hasComparison;
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-6 md:px-6 md:py-8">
@@ -218,8 +276,7 @@ export default async function StudentDetailPage({ params }: StudentPageProps) {
                   {student.firstName} {student.lastName}
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Attendance summary with detailed metrics, history, and review
-                  context.
+                  Current attendance status, snapshot history, and trend overview for review
                 </p>
               </div>
             </div>
@@ -277,7 +334,7 @@ export default async function StudentDetailPage({ params }: StudentPageProps) {
                   label="Total Hours"
                   value={formatHours(latestRecord?.totalHours)}
                 />
-                <SummaryRow label="Snapshots" value={String(history.length)} />
+                <SummaryRow label="Snapshots" value={String(preparedHistory.length)} />
               </dl>
             </div>
           </section>
@@ -322,17 +379,17 @@ export default async function StudentDetailPage({ params }: StudentPageProps) {
         {/* Middle section */}
         <section className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
           <Panel
-            title="Truancy Trend"
-            subtitle="Trend chart will use snapshot history when available."
+            title="Absence Trend"
+            subtitle="Upload date on the x-axis and absence percentage on the y-axis."
           >
-            <EmptyPanel
-              message={
-                history.length <= 1
-                  ? "Not enough snapshot data to show a trend yet."
-                  : "Trend chart integration is coming soon."
-              }
-              tall
-            />
+            {chartData.length <= 1 ? (
+              <EmptyPanel
+                message="Trend will appear once more snapshots are available."
+                tall
+              />
+            ) : (
+              <TrendChart data={chartData} />
+            )}
           </Panel>
 
           <div className="space-y-6">
@@ -385,13 +442,7 @@ export default async function StudentDetailPage({ params }: StudentPageProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {history.map((row) => {
-                    const rowTruancyPercent = calculateTruancyPercent(
-                      row.unexcusedHours,
-                      row.totalHours,
-                    );
-                    const rowStatus = getRiskStatus(rowTruancyPercent);
-
+                  {preparedHistory.map((row) => {
                     return (
                       <tr key={row.id} className="hover:bg-slate-50">
                         <td className="px-4 py-3 text-slate-700">
@@ -422,13 +473,13 @@ export default async function StudentDetailPage({ params }: StudentPageProps) {
                           {formatHours(row.totalHours)}
                         </td>
                         <td className="px-4 py-3 font-semibold text-slate-900">
-                          {rowTruancyPercent.toFixed(2)}%
+                          {row.truancyPercent.toFixed(2)}%
                         </td>
                         <td className="px-4 py-3">
                           <span
-                            className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${rowStatus.badgeClass}`}
+                            className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${row.status.badgeClass}`}
                           >
-                            {rowStatus.label}
+                            {row.status.label}
                           </span>
                         </td>
                       </tr>
@@ -554,6 +605,174 @@ function EmptyPanel({
   );
 }
 
+function TrendChart({
+  data,
+}: {
+  data: {
+    uploadDate: string;
+    reportDate: Date;
+    absencePercent: number;
+    excusedHours: number;
+    unexcusedHours: number;
+    medicalExcusedHours: number;
+    suspensionHours: number;
+    totalAbsHours: number;
+    totalHours: number;
+    addedHours: number;
+  }[];
+}) {
+  const width = 640;
+  const height = 260;
+  const padding = 40;
+
+  const maxY = Math.max(...data.map((p) => p.absencePercent), 10);
+  const usableWidth = width - padding * 2;
+  const usableHeight = height - padding * 2;
+
+  const points = data.map((point, index) => {
+    const x =
+      data.length === 1
+        ? width / 2
+        : padding + (index / (data.length - 1)) * usableWidth;
+
+    const y =
+      padding +
+      usableHeight -
+      (point.absencePercent / maxY) * usableHeight;
+
+    return { ...point, x, y };
+  });
+
+  const polylinePoints = points.map((p) => `${p.x},${p.y}`).join(" ");
+  const latestPoint = points[points.length - 1];
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          className="h-[260px] w-full"
+          role="img"
+          aria-label="Absence trend chart"
+        >
+          {[0, 0.25, 0.5, 0.75, 1].map((step) => {
+            const y = padding + usableHeight - usableHeight * step;
+            const label = `${(maxY * step).toFixed(0)}%`;
+
+            return (
+              <g key={step}>
+                <line
+                  x1={padding}
+                  y1={y}
+                  x2={width - padding}
+                  y2={y}
+                  stroke="#E2E8F0"
+                  strokeDasharray="4 4"
+                />
+                <text
+                  x={padding - 10}
+                  y={y + 4}
+                  textAnchor="end"
+                  fontSize="10"
+                  fill="#64748B"
+                >
+                  {label}
+                </text>
+              </g>
+            );
+          })}
+
+          <line
+            x1={padding}
+            y1={padding}
+            x2={padding}
+            y2={height - padding}
+            stroke="#CBD5E1"
+          />
+          <line
+            x1={padding}
+            y1={height - padding}
+            x2={width - padding}
+            y2={height - padding}
+            stroke="#CBD5E1"
+          />
+
+          <polyline
+            fill="none"
+            points={polylinePoints}
+            stroke="#0F172A"
+            strokeWidth="3"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+
+          {points.map((p, index) => (
+            <g key={`${p.uploadDate}-${index}`}>
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r="5"
+                fill="#0F172A"
+              />
+            </g>
+          ))}
+
+          {points.map((p, index) => (
+            <text
+              key={`${p.uploadDate}-label-${index}`}
+              x={p.x}
+              y={height - 12}
+              textAnchor="middle"
+              fontSize="10"
+              fill="#64748B"
+            >
+              {p.uploadDate}
+            </text>
+          ))}
+        </svg>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-4">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Latest Upload
+          </p>
+          <p className="mt-1 text-sm font-semibold text-slate-900">
+            {latestPoint.uploadDate}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Latest Absence %
+          </p>
+          <p className="mt-1 text-sm font-semibold text-slate-900">
+            {latestPoint.absencePercent.toFixed(2)}%
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Unexcused Hours
+          </p>
+          <p className="mt-1 text-sm font-semibold text-slate-900">
+            {latestPoint.unexcusedHours.toFixed(2)}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Total Abs Hours
+          </p>
+          <p className="mt-1 text-sm font-semibold text-slate-900">
+            {latestPoint.totalAbsHours.toFixed(2)}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function RecentChange({ history }: { history: HistoryRow[] }) {
   const latest = history[history.length - 1];
   const previous = history[history.length - 2];
@@ -586,32 +805,32 @@ function RecentChange({ history }: { history: HistoryRow[] }) {
         ? "text-emerald-700 bg-emerald-50 border-emerald-200"
         : "text-slate-700 bg-slate-50 border-slate-200";
 
-  const truancyText =
-    truancyDiff > 0
-      ? `+${truancyDiff.toFixed(2)}% since last report`
-      : truancyDiff < 0
-        ? `-${Math.abs(truancyDiff).toFixed(2)}% since last report`
-        : "No truancy change since last report";
+ const truancyText =
+  truancyDiff === 0
+    ? "No change in absence percentage since the last report."
+    : truancyDiff > 0
+    ? `Absence percentage increased by ${truancyDiff.toFixed(2)}% since the last report.`
+    : `Absence percentage decreased by ${Math.abs(truancyDiff).toFixed(2)}% since the last report.`;
 
   const hoursText =
-    addedHoursDiff > 0
-      ? `+${addedHoursDiff.toFixed(2)} hours since last report`
-      : addedHoursDiff < 0
-        ? `-${Math.abs(addedHoursDiff).toFixed(2)} hours since last report`
-        : "No added-hour change since last report";
+  addedHoursDiff === 0
+    ? "No new hours were added compared to the previous report."
+    : addedHoursDiff > 0
+    ? `${addedHoursDiff.toFixed(2)} more hours were added compared to the previous report.`
+    : `${Math.abs(addedHoursDiff).toFixed(2)} fewer hours were added compared to the previous report.`;
 
   return (
     <div className="space-y-4">
       <div className={`rounded-2xl border p-4 ${truancyTone}`}>
         <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
-          Truancy %
+          Absence Related
         </p>
         <p className="mt-2 text-base font-semibold">{truancyText}</p>
       </div>
 
       <div className={`rounded-2xl border p-4 ${hourTone}`}>
         <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
-          Added Hours
+          Hours Related
         </p>
         <p className="mt-2 text-base font-semibold">{hoursText}</p>
       </div>

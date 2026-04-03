@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const mockTransaction = vi.fn();
 const mockReportUpsert = vi.fn();
 const mockStudentFindUnique = vi.fn();
 const mockStudentFindFirst = vi.fn();
@@ -8,6 +7,8 @@ const mockStudentCreate = vi.fn();
 const mockRecordUpsert = vi.fn();
 const mockHistoryFindFirst = vi.fn();
 const mockHistoryUpsert = vi.fn();
+const mockHistoryFindMany = vi.fn();
+const mockHistoryUpdate = vi.fn();
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -22,7 +23,9 @@ vi.mock("@/lib/prisma", () => ({
         attendanceRecord: { upsert: mockRecordUpsert },
         attendanceHistory: {
           findFirst: mockHistoryFindFirst,
+          findMany: mockHistoryFindMany,
           upsert: mockHistoryUpsert,
+          update: mockHistoryUpdate,
         },
       }),
   },
@@ -53,11 +56,34 @@ const baseParams = {
 describe("ingestAttendance", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mockReportUpsert.mockResolvedValue({ id: 10 });
+    mockReportUpsert.mockResolvedValue({
+      id: 10,
+      createdAt: new Date("2026-04-01T00:00:00.000Z"),
+      reportDate: new Date("2026-04-01T00:00:00.000Z"),
+    });
     mockStudentFindUnique.mockResolvedValue({ id: 1 });
     mockRecordUpsert.mockResolvedValue({});
-    mockHistoryFindFirst.mockResolvedValue(null);
+    mockHistoryFindMany.mockResolvedValue([
+      {
+        id: 1,
+        studentId: 1,
+        reportId: 10,
+        schoolYear: "2024-2025",
+        excusedHours: 2.5,
+        unexcusedHours: 1.0,
+        medicalExcusedHours: 0.5,
+        suspensionHours: 0.0,
+        totalAbsHours: 4.0,
+        totalHours: 100,
+        addedHours: 0,
+        report: {
+          createdAt: new Date("2026-04-01T00:00:00.000Z"),
+          reportDate: new Date("2026-04-01T00:00:00.000Z"),
+        },
+      },
+    ]);
     mockHistoryUpsert.mockResolvedValue({});
+    mockHistoryUpdate.mockResolvedValue({});
   });
 
   it("inserts a new report and attendance record", async () => {
@@ -146,23 +172,79 @@ describe("ingestAttendance", () => {
   });
 
   it("sets addedHours to 0 when no previous snapshot exists", async () => {
-    mockHistoryFindFirst.mockResolvedValue(null);
+    mockHistoryFindMany.mockResolvedValue([
+      {
+        id: 1,
+        studentId: 1,
+        reportId: 10,
+        schoolYear: "2024-2025",
+        excusedHours: 2.5,
+        unexcusedHours: 1.0,
+        medicalExcusedHours: 0.5,
+        suspensionHours: 0.0,
+        totalAbsHours: 4.0,
+        totalHours: 100,
+        addedHours: 0,
+        report: {
+          createdAt: new Date("2026-04-01T00:00:00.000Z"),
+          reportDate: new Date("2026-04-01T00:00:00.000Z"),
+        },
+      },
+    ]);
+
     await ingestAttendance(baseParams);
-    expect(mockHistoryUpsert).toHaveBeenCalledWith(
+
+    expect(mockHistoryUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
-        create: expect.objectContaining({ addedHours: 0}),
-        update: expect.objectContaining({ addedHours: 0}),
+        data: expect.objectContaining({ addedHours: 0 }),
       })
     );
   });
 
   it("calculates addedHours with diff from most recent snapshot", async () => {
-    mockHistoryFindFirst.mockResolvedValue({ totalAbsHours: 2.5});
+    mockHistoryFindMany.mockResolvedValue([
+      {
+        id: 1,
+        studentId: 1,
+        reportId: 9,
+        schoolYear: "2024-2025",
+        excusedHours: 1.5,
+        unexcusedHours: 0.5,
+        medicalExcusedHours: 0.5,
+        suspensionHours: 0,
+        totalAbsHours: 2.5,
+        totalHours: 100,
+        addedHours: 0,
+        report: {
+          createdAt: new Date("2026-03-01T00:00:00.000Z"),
+          reportDate: new Date("2026-03-01T00:00:00.000Z"),
+        },
+      },
+      {
+        id: 2,
+        studentId: 1,
+        reportId: 10,
+        schoolYear: "2024-2025",
+        excusedHours: 2.5,
+        unexcusedHours: 1.0,
+        medicalExcusedHours: 0.5,
+        suspensionHours: 0,
+        totalAbsHours: 4.0,
+        totalHours: 100,
+        addedHours: 0,
+        report: {
+          createdAt: new Date("2026-04-01T00:00:00.000Z"),
+          reportDate: new Date("2026-04-01T00:00:00.000Z"),
+        },
+      },
+    ]);
+
     await ingestAttendance(baseParams);
-    expect(mockHistoryUpsert).toHaveBeenCalledWith(
+
+    expect(mockHistoryUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
-        create: expect.objectContaining({ addedHours: 1.5}),
-        update: expect.objectContaining({ addedHours: 1.5}),
+        where: { id: 2 },
+        data: expect.objectContaining({ addedHours: 1.5 }),
       })
     );
   });
@@ -170,16 +252,26 @@ describe("ingestAttendance", () => {
   it("queries previous snapshot excluding the current reportId", async () => {
     await ingestAttendance(baseParams);
 
-    expect(mockHistoryFindFirst).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
-          studentId: 1,
-          schoolYear: "2024-2025",
-          reportId: { not: 10 },
-        }),
-        orderBy: { report: { createdAt: "desc" } },
-      })
-    );
+    expect(mockHistoryFindMany).toHaveBeenCalledWith({
+      where: {
+        studentId: 1,
+        schoolYear: "2024-2025",
+      },
+      include: {
+        report: {
+          include: {
+            upload: true,
+          },
+        },
+      },
+      orderBy: {
+        report: {
+          upload: {
+            uploadedAt: "asc",
+          },
+        },
+      },
+    });
   });
 
   it("reprocessing the same upload upserts history without duplicating", async () => {
