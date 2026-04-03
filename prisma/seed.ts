@@ -169,6 +169,7 @@ async function main() {
       passwordHash,
       role: "PARENT",
       firstTimeUser: false,
+      //studentId: 
     },  
   });
 

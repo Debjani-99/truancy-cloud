@@ -33,11 +33,14 @@ model User {
 
   firstTimeUser Boolean @default(true)
 
+  studentId Int?      @unique
+  student   Student?  @relation(fields: [studentId], references: [id], onDelete: SetNull)
+
   county  County?  @relation(fields: [countyId], references: [id], onDelete: SetNull)
   school  School?  @relation(fields: [schoolId], references: [id], onDelete: SetNull)
   uploads Upload[]
 
-  students Student[] 
+  
 
   @@index([countyId])
   @@index([schoolId])
@@ -74,8 +77,7 @@ model Student {
   lastName    String
   createdAt   DateTime @default(now())
 
-  parentId    String?
-  parent      User?   @relation(fields: [parentId], references: [id], onDelete: SetNull)
+  user User?
 
   school School @relation(fields: [schoolId], references: [id], onDelete: Restrict)
 
