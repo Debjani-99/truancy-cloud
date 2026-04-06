@@ -17,6 +17,7 @@ enum Role {
   ADMIN
   COURT
   SCHOOL
+  PARENT
 }
 
 model User {
@@ -30,9 +31,16 @@ model User {
   schoolId     String?
   createdAt    DateTime @default(now())
 
+  firstTimeUser Boolean @default(true)
+
+  studentId Int?      @unique
+  student   Student?  @relation(fields: [studentId], references: [id], onDelete: SetNull)
+
   county  County?  @relation(fields: [countyId], references: [id], onDelete: SetNull)
   school  School?  @relation(fields: [schoolId], references: [id], onDelete: SetNull)
   uploads Upload[]
+
+  
 
   @@index([countyId])
   @@index([schoolId])
@@ -68,6 +76,8 @@ model Student {
   firstName   String
   lastName    String
   createdAt   DateTime @default(now())
+
+  user User?
 
   school School @relation(fields: [schoolId], references: [id], onDelete: Restrict)
 
