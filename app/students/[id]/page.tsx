@@ -383,7 +383,7 @@ const addedHoursTrendDiff = hasComparison
             title={
               <div className="flex items-center gap-2">
                 <span>Absence Trend</span>
-                <Link href="/help/trend"  className="flex items-center">
+                <Link href={`/help/trend?studentId=${student.id}`}  className="flex items-center">
                   <Info className="h-4 w-4 text-blue-500 hover:text-blue-700 cursor-pointer" />
                 </Link>
               </div>
