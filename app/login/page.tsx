@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Footer from "@/app/components/Footer";
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -129,58 +130,8 @@ export default function LoginPage() {
 <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/60 to-transparent" />
 
       {/* Footer */}
-<footer className="relative z-10 mt-20 bg-black/60 backdrop-blur-md text-white">
-  <div className="mx-auto max-w-6xl px-6 py-10">
-    
-    <div className="mx-auto grid max-w-3xl grid-cols-2 gap-12 text-center md:grid-cols-3">
-      
-      {/* Resources */}
-      <div>
-        <h3 className="mb-3 text-sm font-semibold uppercase text-white/80">
-          Resources
-        </h3>
-        <ul className="space-y-2 text-sm text-white/70">
-          <li className="hover:text-white cursor-pointer">Help Guides</li>
-        </ul>
-      </div>
+<Footer />
 
-      {/* Legal */}
-      <div>
-        <h3 className="mb-3 text-sm font-semibold uppercase text-white/80">
-          Legal
-        </h3>
-        <ul className="space-y-2 text-sm text-white/70">
-          <li className="hover:text-white cursor-pointer">
-            Privacy Policy
-          </li>
-          <li className="hover:text-white cursor-pointer">
-            Terms & Conditions
-          </li>
-          <li className="hover:text-white cursor-pointer">
-            Data Retention Policy
-          </li>
-        </ul>
-      </div>
-
-      {/* Company */}
-      <div>
-        <h3 className="mb-3 text-sm font-semibold uppercase text-white/80">
-          Company
-        </h3>
-        <ul className="space-y-2 text-sm text-white/70">
-          <li className="hover:text-white cursor-pointer">About</li>
-        </ul>
-      </div>
-
-    </div>
-
-    {/* Bottom bar */}
-    <div className="mt-10 border-t border-white/10 pt-4 text-center text-xs text-white/60">
-      &copy; {new Date().getFullYear()} Truancy Cloud • Internal use only
-    </div>
-
-  </div>
-</footer>
     </main>
   );
 }

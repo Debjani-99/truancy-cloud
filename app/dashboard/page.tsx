@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
+import Footer from "@/app/components/Footer";
 
 type Role = "SCHOOL" | "COURT" | "ADMIN";
 
@@ -168,6 +169,7 @@ export default function DashboardPage() {
             Loading your dashboard...
           </p>
         </div>
+      <Footer />
       </main>
     );
   }
@@ -365,6 +367,8 @@ export default function DashboardPage() {
             </div>
           </div>
         </section>
+
+      <Footer />
       </main>
     );
   }
@@ -616,6 +620,8 @@ export default function DashboardPage() {
           </>
         )}
       </section>
+
+    <Footer />
     </main>
   );
 }
