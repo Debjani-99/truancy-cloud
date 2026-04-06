@@ -27,7 +27,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-black/5 text-white">
+    <main className="relative min-h-[90vh]  bg-black/5 text-white">
       {/* Background image */}
       <div
         className="absolute inset-0 bg-cover bg-center"
@@ -38,7 +38,7 @@ export default function LoginPage() {
       <div className="absolute inset-0 bg-linear-to-r from-black/30 via-black/10 to-black/5" />
 
       {/* Centered content */}
-      <section className="relative z-10 mx-auto flex min-h-screen max-w-6xl items-center px-6">
+      <section className="relative z-10 mx-auto flex min-h-[90vh] max-w-6xl items-center px-6">
         <div className="grid w-full grid-cols-1 gap-10 md:grid-cols-2">
           {/* Hero text */}
           <div className="absolute inset-0 bg-linear-to-r  from-black/10 via-black/5 to-transparent" />
@@ -113,12 +113,74 @@ export default function LoginPage() {
             </div>
           </div>
         </div>
+
+<div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center animate-bounce">
+  <div className="rounded-full bg-white/20 px-4 py-2 backdrop-blur-md shadow-md">
+    <span className="text-xs font-semibold tracking-widest text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]">
+      SCROLL
+    </span>
+  </div>
+  <span className="mt-2 text-xl text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]">↓</span>
+</div>
+      
       </section>
 
+
+<div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/60 to-transparent" />
+
       {/* Footer */}
-      <footer className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2 text-center text-s text-white/80">
-        &copy; {new Date().getFullYear()} Truancy Cloud &bull; Internal use only
-      </footer>
+<footer className="relative z-10 mt-20 bg-black/60 backdrop-blur-md text-white">
+  <div className="mx-auto max-w-6xl px-6 py-10">
+    
+    <div className="mx-auto grid max-w-3xl grid-cols-2 gap-12 text-center md:grid-cols-3">
+      
+      {/* Resources */}
+      <div>
+        <h3 className="mb-3 text-sm font-semibold uppercase text-white/80">
+          Resources
+        </h3>
+        <ul className="space-y-2 text-sm text-white/70">
+          <li className="hover:text-white cursor-pointer">Help Guides</li>
+        </ul>
+      </div>
+
+      {/* Legal */}
+      <div>
+        <h3 className="mb-3 text-sm font-semibold uppercase text-white/80">
+          Legal
+        </h3>
+        <ul className="space-y-2 text-sm text-white/70">
+          <li className="hover:text-white cursor-pointer">
+            Privacy Policy
+          </li>
+          <li className="hover:text-white cursor-pointer">
+            Terms & Conditions
+          </li>
+          <li className="hover:text-white cursor-pointer">
+            Data Retention Policy
+          </li>
+        </ul>
+      </div>
+
+      {/* Company */}
+      <div>
+        <h3 className="mb-3 text-sm font-semibold uppercase text-white/80">
+          Company
+        </h3>
+        <ul className="space-y-2 text-sm text-white/70">
+          <li className="hover:text-white cursor-pointer">About</li>
+        </ul>
+      </div>
+
+    </div>
+
+    {/* Bottom bar */}
+    <div className="mt-10 border-t border-white/10 pt-4 text-center text-xs text-white/60">
+      &copy; {new Date().getFullYear()} Truancy Cloud • Internal use only
+    </div>
+
+  </div>
+</footer>
     </main>
   );
 }
