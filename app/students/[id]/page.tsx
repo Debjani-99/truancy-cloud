@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
+import { Info } from "lucide-react";
 
 type StudentPageProps = {
   params: Promise<{ id: string }>;
@@ -379,7 +380,14 @@ const addedHoursTrendDiff = hasComparison
         {/* Middle section */}
         <section className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
           <Panel
-            title="Absence Trend"
+            title={
+              <div className="flex items-center gap-2">
+                <span>Absence Trend</span>
+                <Link href="/help/trend"  className="flex items-center">
+                  <Info className="h-4 w-4 text-blue-500 hover:text-blue-700 cursor-pointer" />
+                </Link>
+              </div>
+            }
             subtitle="Upload date on the x-axis and absence percentage on the y-axis."
           >
             {chartData.length <= 1 ? (
@@ -394,7 +402,14 @@ const addedHoursTrendDiff = hasComparison
 
           <div className="space-y-6">
             <Panel
-              title="Recent Change"
+              title={
+                <div className="flex items-center gap-2">
+                  <span>Recent Change</span>
+                  <Link href={`/help/recent-change?studentId=${student.id}`}  className="flex items-center">
+                    <Info className="h-4 w-4 text-blue-500 hover:text-blue-700 cursor-pointer" />
+                  </Link>
+                </div>
+              }
               subtitle="Compare the latest snapshot with the previous one."
             >
               {!hasEnoughHistoryForComparison ? (
@@ -405,7 +420,14 @@ const addedHoursTrendDiff = hasComparison
             </Panel>
 
             <Panel
-              title="Risk Message"
+              title={
+                <div className="flex items-center gap-2">
+                  <span>Risk Message</span>
+                  <Link href={`/help/risk?studentId=${student.id}`}  className="flex items-center">
+                    <Info className="h-4 w-4 text-blue-500 hover:text-blue-700 cursor-pointer" />
+                  </Link>
+                </div>
+              }
               subtitle="Simple rule-based guidance for review."
             >
               <RiskMessage

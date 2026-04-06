@@ -186,7 +186,13 @@ function ResultsInner() {
           </button>
 
           <button
-            onClick={() => router.back()}
+            onClick={() => {
+              if (report?.schoolId) {
+                router.push(`/review?schoolId=${report.schoolId}`);
+              } else {
+                router.push("/review");
+              }
+            }}
             className="rounded-md border px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
           >
             Back
