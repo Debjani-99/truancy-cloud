@@ -23,6 +23,10 @@ spec:
               value: "production"
             - name: DATABASE_URL
               value: "postgresql://postgres:truancyCloud@truancy-postgres-svc:5432/mydb?schema=public"
+            - name: NEXTAUTH_SECRET
+              value: "truancy-cloud-demo-super-secret-change-me"
+            - name: NEXTAUTH_URL
+              value: "https://truancy-cloud-demo.nrp-nautilus.io"
           resources:
             requests:
               cpu: "250m"
