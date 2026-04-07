@@ -237,7 +237,7 @@ export default function DashboardPage() {
               </div>
               <button
                 onClick={() => router.push("settings/change-password")}
-                className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
+                className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
               >
                 <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
@@ -251,7 +251,7 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => signOut({ callbackUrl: "/login" })}
-                className="inline-flex items-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
               >
                 <svg
                   className="mr-2 h-4 w-4"
@@ -415,7 +415,7 @@ export default function DashboardPage() {
             </div>
             <button
               onClick={() => router.push("settings/change-password")}
-              className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
+              className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
             >
               <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
@@ -429,7 +429,7 @@ export default function DashboardPage() {
             </button>
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
+              className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
             >
               <svg
                 className="mr-2 h-4 w-4"
