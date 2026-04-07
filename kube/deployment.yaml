@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: ghcr.io/debjani-99/truancy-cloud:sha-932ee7c
+          image: ghcr.io/debjani-99/truancy-cloud:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
