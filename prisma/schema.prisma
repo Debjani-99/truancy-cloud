@@ -39,6 +39,7 @@ model User {
   county  County?  @relation(fields: [countyId], references: [id], onDelete: SetNull)
   school  School?  @relation(fields: [schoolId], references: [id], onDelete: SetNull)
   uploads Upload[]
+  notes StudentNote[]
 
   
 
@@ -83,6 +84,7 @@ model Student {
 
   records AttendanceRecord[]
   history AttendanceHistory[]
+  notes StudentNote[]
 
   @@unique([schoolId, studentRef])
   @@index([schoolId, lastName, firstName])
@@ -173,3 +175,17 @@ model AttendanceHistory {
   @@index([reportId])
 }
 
+model StudentNote {
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  author  User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([authorId])
+}

@@ -394,15 +394,19 @@ const addedHoursTrendDiff = hasComparison
 
           <Panel
             title="Court Notes"
-            subtitle="Placeholder for future court note entry and saved notes."
+            subtitle="View and manage internal notes for this student."
           >
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+            <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center">
               <p className="text-sm font-medium text-slate-700">
-                Court notes will be added here in a future update.
+                Add and review internal notes for court follow-up.
               </p>
-              <p className="mt-2 text-sm text-slate-500">
-                This area will support note entry, saved note history, and follow-up tracking.
-              </p>
+
+              <Link
+                href={`/students/${student.id}/notes`}
+                className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+              >
+                Open Notes
+              </Link>
             </div>
           </Panel>
         </div>
