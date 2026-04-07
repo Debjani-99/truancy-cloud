@@ -256,9 +256,10 @@ export function TruancyNoticePdf({ letterData, attendanceRows }: Props) {
             </Text>
           ) : (
             <Text style={[styles.portalText, styles.placeholder]}>
-              [PLACEHOLDER — Parent portal account setup instructions will be
-              added here. Contact Henry Fritz to complete this section before
-              mailing.]
+              Parent portal access instructions will be provided separately by
+              the court. Please contact your school or the Champaign County
+              Juvenile Court office if you have not received your account
+              information.
             </Text>
           )}
         </View>
