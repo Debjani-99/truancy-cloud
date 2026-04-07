@@ -21,6 +21,8 @@ spec:
           env:
             - name: NODE_ENV
               value: "production"
+            - name: DATABASE_URL
+              value: "postgresql://postgres:truancyCloud@truancy-postgres-svc:5432/mydb?schema=public"
           resources:
             requests:
               cpu: "250m"
