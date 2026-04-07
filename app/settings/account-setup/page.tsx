@@ -1,0 +1,153 @@
+"use client";
+
+import { signIn } from "next-auth/react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Footer from "@/app/components/Footer";
+
+export default function LoginPage() {
+  const [form, setForm] = useState({ role: "", email: "", password: "" });
+  const [error, setError] = useState("");
+  const router = useRouter();
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+
+    const res = await signIn("credentials", {
+      email: form.email,
+      password: form.password,
+      redirect: false,
+    });
+
+    if (res?.error) {
+      setError("Invalid email or password");
+    } else {
+      window.location.href = "/dashboard";
+    }
+  }
+
+  return (
+    <main className="relative min-h-[90vh]  bg-black/5 text-white">
+      {/* Background image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/ohio.jpg')" }}
+      />
+
+      {/* Dark overlay for readability */}
+      <div className="absolute inset-0 bg-linear-to-r from-black/30 via-black/10 to-black/5" />
+
+      {/* Centered content */}
+      <section className="relative z-10 mx-auto flex min-h-[90vh] max-w-6xl items-center px-6">
+        <div className="grid w-full grid-cols-1 gap-10 md:grid-cols-2">
+          {/* Hero text */}
+          <div className="absolute inset-0 bg-linear-to-r  from-black/10 via-black/5 to-transparent" />
+          <div className="mx-auto flex max-w-lg flex-col items-center justify-center text-center">
+            <h1 className="text-8xl font-extrabold leading-tight sm:text-7xl drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)]">
+              Welcome to the Truancy Cloud Portal
+            </h1>
+
+            
+            <p className="mt-3 text-4xl text-white/95 drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)]">
+              Secure county-based access for schools and courts
+            </p>
+
+            <p className="mt-5 text-xl text-white/110 drop-shadow-[0_4px_20px_rgba(0,0,0,0.6)]">
+              Upload and track attendance reports securely. Access is limited by
+              county and role (School, Court, Admin).
+            </p>
+          </div>
+
+          {/* Login card */}
+          <div className="flex items-center justify-center">
+            <div className="w-full max-w-md rounded-2xl bg-white/30 p-6 text-center backdrop-blur-md ring-1 ring-white/15 shadow-2xl">
+              <h2 className="text-2xl font-semibold text-black/85">Activate Account</h2>
+
+              <p className="mt-2 text-m text-black/85">
+                Authorized county account required
+              </p>
+
+              {error && (
+                <p className="mt-3 text-sm text-red-300">{error}</p>
+              )}
+
+              <form onSubmit={handleSubmit}>
+                <select                       
+                    className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm text-black placeholder-gray-400"
+                    value={form.role}
+                    onChange={(e) => setRole(e.target.value)}
+                    required
+                >
+                  <option value="">Select a role</option>
+                  <option value="COURT">Court</option>
+                  <option value="School">School</option>
+                  <option value="PARENT">Parent</option>
+                </select>
+                {((role === "COURT") || (role === "SCHOOL")) && (
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={form.email}
+                  onChange={(e) =>
+                    setForm({ ...form, email: e.target.value })
+                  }
+                  className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm text-black placeholder-gray-400"
+                  required={(role === "COURT") || (role === "SCHOOL")}
+                />)}
+                {(role === "PARENT") && (
+                <input
+                  placeholder="Student ID"
+                  value={form.studentId}
+                  onChange={(e) =>
+                    setForm({ ...form, studentId: e.target.value })
+                  }
+                  className="mt-3 w-full rounded-lg bg-white px-4 py-2.5 text-sm text-black placeholder-gray-400"
+                  required={role === "PARENT"}
+                />)}
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={form.password}
+                  onChange={(e) =>
+                    setForm({ ...form, password: e.target.value })
+                  }
+                  className="mt-3 w-full rounded-lg bg-white px-4 py-2.5 text-sm text-black placeholder-gray-400"
+                  required
+                />
+
+                <button
+                  type="submit"
+                  className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black hover:opacity-80"
+                >
+                  Activate Account
+                </button>
+              </form>
+
+              <div className="mt-4 text-s text-black/90">
+                Having trouble? Contact your county administrator.
+              </div>
+            </div>
+          </div>
+        </div>
+
+<div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center animate-bounce">
+  <div className="rounded-full bg-white/20 px-4 py-2 backdrop-blur-md shadow-md">
+    <span className="text-xs font-semibold tracking-widest text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]">
+      SCROLL
+    </span>
+  </div>
+  <span className="mt-2 text-xl text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]">↓</span>
+</div>
+      
+      </section>
+
+
+<div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/60 to-transparent" />
+
+      {/* Footer */}
+<Footer />
+
+    </main>
+  );
+}

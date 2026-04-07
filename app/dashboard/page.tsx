@@ -90,7 +90,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (status !== "authenticated") return;
     if (session?.user?.firstTimeUser === true) {
-       router.replace("/account-setup");
+       router.replace("/settings/account-setup");
     }
   }, [status, session, router]);
 
@@ -243,6 +243,20 @@ export default function DashboardPage() {
                   {role ? role.toLowerCase() : ""} User
                 </p>
               </div>
+              <button
+                onClick={() => router.push("create-user")}
+                className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
+              >
+                <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                   strokeLinejoin="round"
+                   strokeWidth={2}
+                   d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  />
+                </svg>
+                Create New Account
+              </button>
               <button
                 onClick={() => router.push("settings/change-password")}
                 className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"

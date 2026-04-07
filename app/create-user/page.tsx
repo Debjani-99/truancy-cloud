@@ -346,7 +346,7 @@ export default function CreateAccountPage() {
                      >
                       <option value="">Select a role</option>
                       {role === "ADMIN" && (<option value="COURT">Court</option>)}
-                      <option value="SCHOOL">School</option>
+                      {((role === "ADMIN") || (role === "COURT")) && (<option value="SCHOOL">School</option>)}
                       <option value="PARENT">Parent</option>
                     </select>
                 </div>
