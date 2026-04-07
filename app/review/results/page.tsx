@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { Button } from "@/app/components/ui/button";
+import { Badge, riskVariant } from "@/app/components/ui/badge";
 
 type ResultRow = {
   id: number;
@@ -29,6 +31,14 @@ type ReportInfo = {
   createdAt: string;
 };
 
+const THRESHOLDS = [
+  { label: "All", value: "0" },
+  { label: "5%+", value: "5" },
+  { label: "7%+", value: "7" },
+  { label: "8%+", value: "8" },
+  { label: "10%+", value: "10" },
+];
+
 export default function ResultsPage() {
   return (
     <Suspense
@@ -54,14 +64,9 @@ function ResultsInner() {
   const [records, setRecords] = useState<ResultRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  // Live filters — no "Apply" button needed
   const [threshold, setThreshold] = useState("7");
   const [sortBy, setSortBy] = useState("truancy-desc");
-  const [appliedThreshold, setAppliedThreshold] = useState("7");
-  const [appliedSortBy, setAppliedSortBy] = useState("truancy-desc");
-  const [appliedStartDate, setAppliedStartDate] = useState("");
-  const [appliedEndDate, setAppliedEndDate] = useState("");
 
   useEffect(() => {
     const loadResults = async () => {
@@ -70,19 +75,13 @@ function ResultsInner() {
         setLoading(false);
         return;
       }
-
       try {
-        const res = await fetch(`/api/uploads/${uploadId}/results`, {
-          cache: "no-store",
-        });
-
+        const res = await fetch(`/api/uploads/${uploadId}/results`, { cache: "no-store" });
         const data = await res.json().catch(() => ({}));
-
         if (!res.ok) {
           setError(data?.error ?? "Failed to load results.");
           return;
         }
-
         setReport(data.report ?? null);
         setRecords(data.records ?? []);
       } catch {
@@ -91,7 +90,6 @@ function ResultsInner() {
         setLoading(false);
       }
     };
-
     loadResults();
   }, [uploadId]);
 
@@ -112,276 +110,177 @@ function ResultsInner() {
           <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
-
-          <button
+          <Button
+            variant="outline"
+            className="mt-4"
             onClick={() => router.push("/review")}
-            className="mt-4 rounded-md border px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
           >
-            Back
-          </button>
+            ← Back
+          </Button>
         </div>
       </main>
     );
   }
 
   const displayRecords = [...records]
-  .filter((r) => {
-    const selectedThreshold = Number(appliedThreshold);
-    if (selectedThreshold === 0) return true;
-    return (r.truancyPercent ?? 0) >= selectedThreshold;
-  })
-  .sort((a, b) => {
-    if (appliedSortBy === "truancy-desc") {
-      return (b.truancyPercent ?? 0) - (a.truancyPercent ?? 0);
-    }
-
-    if (appliedSortBy === "truancy-asc") {
-      return (a.truancyPercent ?? 0) - (b.truancyPercent ?? 0);
-    }
-
-    const nameA = `${a.firstName} ${a.lastName}`.trim().toLowerCase();
-    const nameB = `${b.firstName} ${b.lastName}`.trim().toLowerCase();
-
-    if (appliedSortBy === "name-asc") {
-      return nameA.localeCompare(nameB);
-    }
-
-    if (appliedSortBy === "name-desc") {
-      return nameB.localeCompare(nameA);
-    }
-
-    return 0;
-  });
+    .filter((r) => {
+      const t = Number(threshold);
+      return t === 0 || (r.truancyPercent ?? 0) >= t;
+    })
+    .sort((a, b) => {
+      if (sortBy === "truancy-desc") return (b.truancyPercent ?? 0) - (a.truancyPercent ?? 0);
+      if (sortBy === "truancy-asc") return (a.truancyPercent ?? 0) - (b.truancyPercent ?? 0);
+      const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+      const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+      if (sortBy === "name-asc") return nameA.localeCompare(nameB);
+      if (sortBy === "name-desc") return nameB.localeCompare(nameA);
+      return 0;
+    });
 
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-10">
       <div className="mx-auto max-w-7xl rounded-xl border bg-white p-8 shadow-sm">
+
+        {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Results</h1>
-            <p className="mt-1 text-sm text-gray-600">
-              Current attendance table for this school and school year
-            </p>
-
+            <h1 className="text-2xl font-bold text-gray-900">Attendance Results</h1>
             {report && (
-              <div className="mt-4 space-y-1 text-sm text-gray-700">
-                <p>
-                  <span className="font-semibold">School Year:</span>{" "}
-                  {report.schoolYear}
-                </p>
-                <p>
-                  <span className="font-semibold">Upload ID:</span>{" "}
-                  {report.uploadId}
-                </p>
-              </div>
+              <p className="mt-1 text-sm text-gray-500">
+                School Year: <span className="font-medium text-gray-700">{report.schoolYear}</span>
+              </p>
             )}
           </div>
 
-        <div className="flex gap-2">
-          <button
-            onClick={() => router.push("/review/results/help")}
-            className="rounded-md border bg-blue-100 px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-blue-200"
-          >
-            ℹ️ How to Interpret Results
-          </button>
-
-          {report?.schoolId && (
-            <button
-              onClick={() => router.push(`/students?schoolId=${report.schoolId}`)}
-              className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100"
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push("/review/results/help")}
             >
-              View All Students
-            </button>
-          )}
+              How to interpret results
+            </Button>
 
-          <button
-            onClick={() => {
-              if (report?.schoolId) {
-                router.push(`/review?schoolId=${report.schoolId}`);
-              } else {
-                router.push("/review");
-              }
-            }}
-            className="rounded-md border px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+            {report?.schoolId && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => router.push(`/students?schoolId=${report.schoolId}`)}
+              >
+                View All Students
+              </Button>
+            )}
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(report?.schoolId ? `/review?schoolId=${report.schoolId}` : "/review")}
+            >
+              ← Back
+            </Button>
+          </div>
+        </div>
+
+        {/* Filter bar */}
+        <div className="mt-6 flex flex-wrap items-center gap-4 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
+          {/* Threshold chips */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-500">Min absence %</span>
+            <div className="flex rounded-lg border border-gray-200 bg-white overflow-hidden">
+              {THRESHOLDS.map((t) => (
+                <button
+                  key={t.value}
+                  onClick={() => setThreshold(t.value)}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                    threshold === t.value
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Sort */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-500">Sort</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="rounded-md border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="truancy-desc">Absence % ↓</option>
+              <option value="truancy-asc">Absence % ↑</option>
+              <option value="name-asc">Name A → Z</option>
+              <option value="name-desc">Name Z → A</option>
+            </select>
+          </div>
+
+          {/* Reset */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => { setThreshold("7"); setSortBy("truancy-desc"); }}
+            className="ml-auto"
           >
-            Back
-          </button>
-        </div>
-        </div>
+            Reset
+          </Button>
 
-        <div className="mt-6 flex flex-wrap items-end gap-4 rounded-lg border bg-gray-50 p-4">
-          <div className="flex flex-col">
-        <label className="mb-1 text-sm font-medium text-gray-700">Start Date</label>
-        <input
-          type="date"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      <div className="flex flex-col">
-        <label className="mb-1 text-sm font-medium text-gray-700">End Date</label>
-        <input
-          type="date"
-          value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      <div className="flex flex-col">
-        <label className="mb-1 text-sm font-medium text-gray-700">Threshold</label>
-        <select
-          value={threshold}
-          onChange={(e) => setThreshold(e.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="0">All</option>
-          <option value="5">5%+</option>
-          <option value="7">7%+</option>
-          <option value="8">8%+</option>
-          <option value="10">10%+</option>
-        </select>
-      </div>
-
-      <div className="flex flex-col">
-        <label className="mb-1 text-sm font-medium text-gray-700">Sort By</label>
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="truancy-desc">Absence % (High to Low)</option>
-          <option value="truancy-asc">Absence % (Low to High)</option>
-          <option value="name-asc">Name (A to Z)</option>
-          <option value="name-desc">Name (Z to A)</option>
-        </select>
-      </div>
-
-      <div className="ml-auto flex items-end gap-2 self-end">
-        <button
-          onClick={() => {
-            setAppliedStartDate(startDate);
-            setAppliedEndDate(endDate);
-            setAppliedThreshold(threshold);
-            setAppliedSortBy(sortBy);
-          }}
-          className="rounded-md bg-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-200"
-        >
-          Apply Changes
-        </button>
-
-        <button
-          onClick={() => {
-            setStartDate("");
-            setEndDate("");
-            setThreshold("7");
-            setSortBy("truancy-desc");
-
-            setAppliedStartDate("");
-            setAppliedEndDate("");
-            setAppliedThreshold("7");
-            setAppliedSortBy("truancy-desc");
-          }}
-          className="rounded-md border border-gray-300 bg-red-400 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-200"
-        >
-          Reset
-        </button>
-      </div>
+          {/* Count */}
+          <span className="text-xs text-gray-500">
+            {displayRecords.length} student{displayRecords.length !== 1 ? "s" : ""}
+          </span>
         </div>
 
-      <div className="mt-6 flex items-center justify-between text-sm text-gray-600">
-        <p>
-          {displayRecords.length} students
-        </p>
-
-        <p>
-          Showing{" "}
-          {appliedThreshold === "0"
-            ? "all students"
-            : `≥ ${appliedThreshold}% truancy`}{" "}
-          • Sorted by{" "}
-          {appliedSortBy === "truancy-desc"
-            ? "Absence % (High to Low)"
-            : appliedSortBy === "truancy-asc"
-            ? "Absence % (Low to High)"
-            : appliedSortBy === "name-asc"
-            ? "Name (A → Z)"
-            : "Name (Z → A)"}
-        </p>
-      </div>
-
-        
-
-        <div className="mt-8 overflow-x-auto rounded-lg border">
+        {/* Table */}
+        <div className="mt-4 overflow-x-auto rounded-lg border">
           {displayRecords.length === 0 ? (
-            <div className="p-4 text-sm text-gray-600">
-              No attendance records found.
+            <div className="p-6 text-center text-sm text-gray-500">
+              No students match the current filter.
             </div>
           ) : (
             <table className="min-w-full text-left text-sm">
-              <thead className="bg-gray-50 text-gray-600">
+              <thead className="border-b border-gray-200 bg-gray-50 text-gray-600">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Student Ref</th>
-                  <th className="px-4 py-3 font-medium">Student Name</th>
-                  <th className="px-4 py-3 font-medium">Excused</th>
-                  <th className="px-4 py-3 font-medium">Unexcused</th>
-                  <th className="px-4 py-3 font-medium">Medical</th>
-                  <th className="px-4 py-3 font-medium">Suspension</th>
-                  <th className="px-4 py-3 font-medium">Added</th>
-                  <th className="px-4 py-3 font-medium">Total Abs</th>
-                  <th className="px-4 py-3 font-medium">Total Hours</th>
+                  <th className="px-4 py-3 font-medium">Name</th>
+                  <th className="px-4 py-3 font-medium">Student ID</th>
+                  <th className="px-4 py-3 font-medium">Unexcused Hrs</th>
                   <th className="px-4 py-3 font-medium">Absence %</th>
-                  <th className="px-4 py-3 font-medium">Flag</th>
+                  <th className="px-4 py-3 font-medium">Risk Status</th>
+                  <th className="px-4 py-3 font-medium"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-gray-100">
                 {displayRecords.map((r) => (
-                  <tr key={r.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-gray-700">{r.studentRef ?? "-"}</td>
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/students/${r.studentId}`}
-                        className="text-blue-500 font-medium hover:underline"
-                      >
-                        {`${r.firstName} ${r.lastName}`.trim() || "-"}
-                      </Link>
+                  <tr key={r.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-medium text-gray-900">
+                      {`${r.firstName} ${r.lastName}`.trim() || "—"}
                     </td>
-                    <td className="px-4 py-3 text-gray-900">{r.excusedHours}</td>
-                    <td className="px-4 py-3 text-gray-900">{r.unexcusedHours}</td>
-                    <td className="px-4 py-3 text-gray-900">{r.medicalExcusedHours}</td>
-                    <td className="px-4 py-3 text-gray-900">{r.suspensionHours}</td>
-                    <td className="px-4 py-3 text-gray-900">{r.addedHours}</td>
-                    <td className="px-4 py-3 text-gray-900 ">{r.totalAbsHours}</td>
-                    <td className="px-4 py-3 text-gray-900 ">{r.totalHours}</td>
-                    <td
-                        className={`px-4 py-3 font-medium ${
-                          r.flag === "At Risk"
-                            ? "text-red-800"
-                            : r.flag === "Court Warning"
-                            ? "text-red-700"
-                            : r.flag === "At Watch"
-                            ? "text-yellow-700"
-                            : "text-green-700"
-                        }`}
-                      >
+                    <td className="px-4 py-3 text-gray-500">{r.studentRef ?? "—"}</td>
+                    <td className="px-4 py-3 text-gray-700">{r.unexcusedHours.toFixed(1)}</td>
+                    <td className="px-4 py-3 font-medium">
+                      <span className={
+                        r.flag === "At Risk" ? "text-red-700"
+                        : r.flag === "Court Warning" ? "text-orange-600"
+                        : r.flag === "At Watch" ? "text-yellow-700"
+                        : "text-emerald-700"
+                      }>
                         {(r.truancyPercent ?? 0).toFixed(2)}%
+                      </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${
-                          r.flag === "At Risk"
-                            ? "bg-red-200 text-red-800"
-                            : r.flag === "Court Warning"
-                            ? "bg-red-100 text-red-700"
-                            : r.flag === "At Watch"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-green-100 text-green-700"
-                        }`}
-                      >
-                        {r.flag ?? "Normal"}
-                      </span>
+                      <Badge variant={riskVariant(r.flag)}>{r.flag}</Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Button asChild variant="outline" size="sm">
+                        <Link
+                          href={`/students/${r.studentId}?from=results&uploadId=${uploadId}&schoolId=${report?.schoolId ?? ""}`}
+                        >
+                          Detail
+                        </Link>
+                      </Button>
                     </td>
                   </tr>
                 ))}
