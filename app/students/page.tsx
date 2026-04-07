@@ -199,10 +199,10 @@ function StudentsInner() {
                     </td>
                     <td className="px-4 py-3">
                       <Link
-                        href={`/students/${s.id}`}
-                        className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-700 transition-colors"
+                        href={`/students/${s.id}?from=students&schoolId=${s.schoolId}`}
+                        className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition-colors"
                       >
-                        View
+                        Detail
                       </Link>
                     </td>
                   </tr>

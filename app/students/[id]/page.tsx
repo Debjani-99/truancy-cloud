@@ -6,6 +6,7 @@ import { Info } from "lucide-react";
 
 type StudentPageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string; schoolId?: string; uploadId?: string }>;
 };
 
 function calculateTruancyPercent(
@@ -86,15 +87,16 @@ type HistoryRow = {
   };
 };
 
-export default async function StudentDetailPage({ params }: StudentPageProps) {
+export default async function StudentDetailPage({ params, searchParams }: StudentPageProps) {
   const auth = await requireAuth(["ADMIN", "COURT", "SCHOOL"]);
     if (auth.error) {
     redirect("/login");
     }
-    
+
   const session = auth.session;
 
   const { id } = await params;
+  const { from, schoolId: fromSchoolId, uploadId: fromUploadId } = await searchParams;
   const studentId = Number(id);
 
   if (Number.isNaN(studentId)) {
@@ -237,9 +239,15 @@ const addedHoursTrendDiff = hasComparison
     )
   : 0;
 
-  const backHref = latestRecord?.report?.uploadId
-    ? `/review/results?uploadId=${latestRecord.report.uploadId}`
-    : "/review";
+  const backHref =
+    from === "students" && fromSchoolId
+      ? `/students?schoolId=${fromSchoolId}`
+      : from === "results" && fromUploadId
+      ? `/review/results?uploadId=${fromUploadId}`
+      : "/review";
+
+  const backLabel =
+    from === "students" ? "← Back to Students" : "← Back to Results";
 
   const hasHistory = preparedHistory.length > 0;
   const hasEnoughHistoryForComparison = hasComparison;
@@ -265,7 +273,7 @@ const addedHoursTrendDiff = hasComparison
           href={backHref}
           className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
         >
-          ← Back to Results
+          {backLabel}
         </Link>
       </div>
 
