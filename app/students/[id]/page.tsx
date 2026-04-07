@@ -6,7 +6,7 @@ import { Info } from "lucide-react";
 
 type StudentPageProps = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ from?: string; schoolId?: string; uploadId?: string }>;
+  searchParams?: Promise<{ from?: string; schoolId?: string; uploadId?: string }>;
 };
 
 function calculateTruancyPercent(
@@ -96,7 +96,7 @@ export default async function StudentDetailPage({ params, searchParams }: Studen
   const session = auth.session;
 
   const { id } = await params;
-  const { from, schoolId: fromSchoolId, uploadId: fromUploadId } = await searchParams;
+  const { from, schoolId: fromSchoolId, uploadId: fromUploadId } = (await searchParams) ?? {};
   const studentId = Number(id);
 
   if (Number.isNaN(studentId)) {
