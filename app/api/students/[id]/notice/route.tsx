@@ -10,10 +10,10 @@ export const dynamic = "force-dynamic";
 
 function computeRiskLabel(
   unexcusedHours: number,
-  totalAbs: number,
+  totalHours: number,
 ): "Normal" | "At Watch" | "Court Warning" | "At Risk" {
-  if (totalAbs <= 0) return "Normal";
-  const pct = (unexcusedHours / totalAbs) * 100;
+  if (totalHours <= 0) return "Normal";
+  const pct = (unexcusedHours / totalHours) * 100;
   if (pct >= 10) return "At Risk";
   if (pct >= 7) return "Court Warning";
   if (pct >= 5) return "At Watch";
@@ -28,6 +28,7 @@ const recordSelect = {
     unexcusedHours: true,
     medicalExcusedHours: true,
     suspensionHours: true,
+    totalHours: true,
     totalAbsHours: true,
   },
 };
@@ -85,12 +86,13 @@ export async function GET(
   );
   const latest = sortedRecords[0];
   const unexcused = Number(latest?.unexcusedHours ?? 0);
-  const totalAbs = Number(latest?.totalAbsHours ?? 0);
-  const truancyPercent = totalAbs > 0 ? (unexcused / totalAbs) * 100 : 0;
+  const totalHours = Number(latest?.totalHours ?? 0);
+  const truancyPercent = totalHours > 0 ? (unexcused / totalHours) * 100 : 0;
 
   const attendanceRows: AttendanceRow[] = student.records.map((r) => {
     const u = Number(r.unexcusedHours ?? 0);
-    const t = Number(r.totalAbsHours ?? 0);
+    const t = Number(r.totalHours ?? 0);
+    const abs = Number(r.totalAbsHours ?? 0);
     const pct = t > 0 ? (u / t) * 100 : 0;
     return {
       schoolYear: r.schoolYear,
@@ -98,7 +100,7 @@ export async function GET(
       unexcusedHours: u,
       medicalExcusedHours: Number(r.medicalExcusedHours ?? 0),
       suspensionHours: Number(r.suspensionHours ?? 0),
-      totalAbsHours: t,
+      totalAbsHours: abs,
       totalHours: t,
       truancyPercent: Number(pct.toFixed(2)),
       riskLabel: computeRiskLabel(u, t),
@@ -118,9 +120,9 @@ export async function GET(
     countyName: student.school.county.name,
     schoolYear: latest?.schoolYear ?? "Unknown",
     unexcusedHours: unexcused,
-    totalHours: totalAbs,
+    totalHours,
     truancyPercent: Number(truancyPercent.toFixed(2)),
-    riskLabel: computeRiskLabel(unexcused, totalAbs),
+    riskLabel: computeRiskLabel(unexcused, totalHours),
     generatedDate,
     // TODO: Populate after Thursday sync with Henry (parent account init)
     parentPortalInstructions: "",

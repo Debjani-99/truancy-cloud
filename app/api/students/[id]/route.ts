@@ -4,10 +4,10 @@ import { prisma } from "@/lib/prisma";
 
 function computeRiskLabel(
   unexcusedHours: number,
-  totalAbs: number,
+  totalHours: number,
 ): "Normal" | "At Watch" | "Court Warning" | "At Risk" {
-  if (totalAbs <= 0) return "Normal";
-  const pct = (unexcusedHours / totalAbs) * 100;
+  if (totalHours <= 0) return "Normal";
+  const pct = (unexcusedHours / totalHours) * 100;
   if (pct >= 10) return "At Risk";
   if (pct >= 7) return "Court Warning";
   if (pct >= 5) return "At Watch";
@@ -23,6 +23,7 @@ const recordInclude = {
     unexcusedHours: true,
     medicalExcusedHours: true,
     suspensionHours: true,
+    totalHours: true,
     totalAbsHours: true,
     addedHours: true,
   },
@@ -80,8 +81,8 @@ export async function GET(
 
   const latestRecord = student.records[0] ?? null;
   const unexcused = Number(latestRecord?.unexcusedHours ?? 0);
-  const totalAbs = Number(latestRecord?.totalAbsHours ?? 0);
-  const truancyPercent = totalAbs > 0 ? (unexcused / totalAbs) * 100 : 0;
+  const totalHours = Number(latestRecord?.totalHours ?? 0);
+  const truancyPercent = totalHours > 0 ? (unexcused / totalHours) * 100 : 0;
 
   return NextResponse.json({
     student: {
@@ -90,22 +91,24 @@ export async function GET(
       lastName: student.lastName,
       studentRef: student.studentRef,
       school: student.school,
-      riskLabel: computeRiskLabel(unexcused, totalAbs),
+      riskLabel: computeRiskLabel(unexcused, totalHours),
       truancyPercent: Number(truancyPercent.toFixed(2)),
       records: student.records.map((r) => {
         const u = Number(r.unexcusedHours ?? 0);
-        const t = Number(r.totalAbsHours ?? 0);
-        const pct = t > 0 ? (u / t) * 100 : 0;
+        const totalHours = Number(r.totalHours ?? 0);
+        const totalAbs = Number(r.totalAbsHours ?? 0);
+        const pct = totalHours > 0 ? (u / totalHours) * 100 : 0;
         return {
           ...r,
           excusedHours: Number(r.excusedHours ?? 0),
           unexcusedHours: u,
           medicalExcusedHours: Number(r.medicalExcusedHours ?? 0),
           suspensionHours: Number(r.suspensionHours ?? 0),
-          totalAbsHours: t,
+          totalHours,
+          totalAbsHours: totalAbs,
           addedHours: Number(r.addedHours ?? 0),
           truancyPercent: Number(pct.toFixed(2)),
-          riskLabel: computeRiskLabel(u, t),
+          riskLabel: computeRiskLabel(u, totalHours),
         };
       }),
     },
