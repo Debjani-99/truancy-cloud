@@ -11,7 +11,7 @@ export default function Footer() {
             </h3>
             <ul className="space-y-2 text-sm text-white/70">
               <li className="hover:text-white cursor-pointer">
-                Parental Help Guides
+                Help Guides
               </li>
             </ul>
           </div>
