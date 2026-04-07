@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
     select: {
       schoolYear: true,
       unexcusedHours: true,
+      totalHours: true,
       totalAbsHours: true,
     },
   };
@@ -90,9 +91,10 @@ export async function GET(req: NextRequest) {
   const rows = students.map((s) => {
     const latest = s.records[0] ?? null;
     const unexcused = Number(latest?.unexcusedHours ?? 0);
+    const totalHours = Number(latest?.totalHours ?? 0);
     const totalAbs = Number(latest?.totalAbsHours ?? 0);
-    const riskLabel = computeRiskLabel(unexcused, totalAbs);
-    const truancyPercent = totalAbs > 0 ? (unexcused / totalAbs) * 100 : 0;
+    const riskLabel = computeRiskLabel(unexcused, totalHours);
+    const truancyPercent = totalAbs > 0 ? (unexcused / totalHours) * 100 : 0;
 
     return {
       id: s.id,
@@ -104,6 +106,7 @@ export async function GET(req: NextRequest) {
       countyName: s.school.county.name,
       schoolYear: latest?.schoolYear ?? null,
       unexcusedHours: unexcused,
+      totalHours,
       totalAbsHours: totalAbs,
       truancyPercent: Number(truancyPercent.toFixed(2)),
       riskLabel,
