@@ -333,7 +333,7 @@ const addedHoursTrendDiff = hasComparison
       </section>
 
       {/* Main analytics area */}
-      <section className="grid items-start gap-6 xl:grid-cols-[1.75fr_0.95fr]">
+      <section className="grid items-stretch gap-6 xl:grid-cols-[1.75fr_0.95fr]">
         <Panel
           title={
             <div className="flex items-center gap-2">
@@ -616,7 +616,7 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm h-full">
       <div className="mb-4">
         <h2 className="text-2xl font-bold text-slate-900">{title}</h2>
         {subtitle ? (

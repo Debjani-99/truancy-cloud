@@ -103,7 +103,7 @@ function StudentsInner() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div>
             <button
-              onClick={() => router.back()}
+              onClick={() => router.push("/dashboard")}
               className="mb-1 flex items-center gap-1 text-sm text-gray-500 hover:text-gray-800"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -127,7 +127,7 @@ function StudentsInner() {
             <select
               value={riskFilter}
               onChange={(e) => setRiskFilter(e.target.value as RiskLabel)}
-              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="All">All Students</option>
               <option value="At Risk">At Risk</option>
@@ -144,7 +144,7 @@ function StudentsInner() {
               placeholder="Name or student ID…"
               value={nameSearch}
               onChange={(e) => setNameSearch(e.target.value)}
-              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
