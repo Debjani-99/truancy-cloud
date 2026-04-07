@@ -27,6 +27,8 @@ spec:
               value: "truancy-cloud-demo-super-secret-change-me"
             - name: NEXTAUTH_URL
               value: "https://truancy-cloud-demo.nrp-nautilus.io"
+             - name: UPLOAD_DIR
+              value: "/tmp/uploads"
           resources:
             requests:
               cpu: "250m"
