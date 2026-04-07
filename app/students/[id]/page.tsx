@@ -6,6 +6,7 @@ import { Info } from "lucide-react";
 
 type StudentPageProps = {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ from?: string; schoolId?: string; uploadId?: string }>;
 };
 
 function calculateTruancyPercent(
@@ -86,15 +87,16 @@ type HistoryRow = {
   };
 };
 
-export default async function StudentDetailPage({ params }: StudentPageProps) {
+export default async function StudentDetailPage({ params, searchParams }: StudentPageProps) {
   const auth = await requireAuth(["ADMIN", "COURT", "SCHOOL"]);
     if (auth.error) {
     redirect("/login");
     }
-    
+
   const session = auth.session;
 
   const { id } = await params;
+  const { from, schoolId: fromSchoolId, uploadId: fromUploadId } = (await searchParams) ?? {};
   const studentId = Number(id);
 
   if (Number.isNaN(studentId)) {
@@ -237,9 +239,15 @@ const addedHoursTrendDiff = hasComparison
     )
   : 0;
 
-  const backHref = latestRecord?.report?.uploadId
-    ? `/review/results?uploadId=${latestRecord.report.uploadId}`
-    : "/review";
+  const backHref =
+    from === "students" && fromSchoolId
+      ? `/students?schoolId=${fromSchoolId}`
+      : from === "results" && fromUploadId
+      ? `/review/results?uploadId=${fromUploadId}`
+      : "/review";
+
+  const backLabel =
+    from === "students" ? "← Back to Students" : "← Back to Results";
 
   const hasHistory = preparedHistory.length > 0;
   const hasEnoughHistoryForComparison = hasComparison;
@@ -265,7 +273,7 @@ const addedHoursTrendDiff = hasComparison
           href={backHref}
           className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
         >
-          ← Back to Results
+          {backLabel}
         </Link>
       </div>
 
@@ -422,16 +430,39 @@ const addedHoursTrendDiff = hasComparison
           subtitle="Generate a notice letter for mailing to the student's family."
         >
           <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center">
-            <p className="text-sm font-medium text-slate-700">
-              A truancy warning letter placeholder for court follow-up.
-            </p>
-
-            <button
-              type="button"
-              className="inline-flex items-center rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
-            >
-              Generate Letter
-            </button>
+            {session.user.role === "SCHOOL" ? (
+              <p className="text-sm text-slate-500">
+                Only court users and administrators can generate truancy notice letters.
+              </p>
+            ) : (
+              <>
+                <p className="text-sm font-medium text-slate-700">
+                  Downloads a PDF truancy notice letter pre-filled with this
+                  student&apos;s attendance data. Parent portal instructions will
+                  be added once available.
+                </p>
+                <a
+                  href={`/api/students/${student.id}/notice`}
+                  download
+                  className="inline-flex items-center rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+                >
+                  <svg
+                    className="mr-2 h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                    />
+                  </svg>
+                  Generate Letter
+                </a>
+              </>
+            )}
           </div>
         </Panel>
       </section>
