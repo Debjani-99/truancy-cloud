@@ -11,27 +11,6 @@ type County = {
   name: string;
 };
 
-function Card({
-  title,
-  subtitle,
-  onClick,
-}: {
-  title: string;
-  subtitle?: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-full text-left rounded-xl border bg-white p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition"
-    >
-      <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-      {subtitle && <p className="mt-2 text-sm text-gray-600">{subtitle}</p>}
-      <p className="mt-4 text-sm font-semibold text-blue-600">Open →</p>
-    </button>
-  );
-}
-
 export default function AdminCourtsPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -64,20 +43,19 @@ export default function AdminCourtsPage() {
   }, [role]);
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <header className="border-b bg-white">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <header className="border-b border-white/20 bg-white/80 shadow-sm backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div>
-            <h1 className="text-2xl font-bold text-blue-600">Admin • Courts</h1>
-            <p className="mt-1 text-sm text-gray-600">Select a court/county to drill into schools.</p>
+            <h1 className="text-2xl font-bold text-gray-900">All Courts</h1>
+            <p className="mt-1 text-sm text-gray-500">Admin · Select a county to view its schools.</p>
           </div>
           <button
             onClick={() => router.push("/dashboard")}
-            className="rounded-md bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-900
-                        hover:bg-gray-200 transition"
-            >
+            className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+          >
             ← Back
-            </button>
+          </button>
         </div>
       </header>
 
@@ -91,12 +69,21 @@ export default function AdminCourtsPage() {
         ) : (
           <div className="grid gap-6 md:grid-cols-2">
             {counties.map((c) => (
-              <Card
+              <div
                 key={c.id}
-                title={c.name}
-                subtitle="View schools in this county"
-                onClick={() => router.push(`/admin/courts/${c.id}`)}
-              />
+                className="rounded-xl border bg-white p-6 shadow-sm hover:shadow-md hover:border-blue-300 transition"
+              >
+                <h3 className="text-lg font-semibold text-gray-900">{c.name} County</h3>
+                <p className="mt-1 text-sm text-gray-500">Champaign County Juvenile Court</p>
+                <div className="mt-4 flex gap-3">
+                  <button
+                    onClick={() => router.push(`/admin/courts/${c.id}`)}
+                    className="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700"
+                  >
+                    View Schools
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
         )}

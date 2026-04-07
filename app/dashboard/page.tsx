@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
+import Footer from "@/app/components/Footer";
 
 type Role = "SCHOOL" | "COURT" | "ADMIN";
 
@@ -176,6 +177,7 @@ export default function DashboardPage() {
             Loading your dashboard...
           </p>
         </div>
+      <Footer />
       </main>
     );
   }
@@ -243,7 +245,7 @@ export default function DashboardPage() {
               </div>
               <button
                 onClick={() => router.push("settings/change-password")}
-                className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
+                className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
               >
                 <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
@@ -257,7 +259,7 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => signOut({ callbackUrl: "/login" })}
-                className="inline-flex items-center rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
               >
                 <svg
                   className="mr-2 h-4 w-4"
@@ -373,6 +375,8 @@ export default function DashboardPage() {
             </div>
           </div>
         </section>
+
+      <Footer />
       </main>
     );
   }
@@ -433,7 +437,7 @@ export default function DashboardPage() {
             </button>
             <button
               onClick={() => router.push("settings/change-password")}
-              className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
+              className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
             >
               <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
@@ -447,7 +451,7 @@ export default function DashboardPage() {
             </button>
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
+              className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
             >
               <svg
                 className="mr-2 h-4 w-4"
@@ -554,27 +558,34 @@ export default function DashboardPage() {
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {schools.map((school) => (
-                  <Card
+                  <div
                     key={school.id}
-                    title={school.name}
-                    subtitle="Review uploaded attendance reports"
-                    onClick={() => router.push(`/review?schoolId=${school.id}`)}
-                    icon={
-                      <svg
-                        className="h-6 w-6"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                        />
+                    className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:border-blue-300 hover:shadow-xl"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                    <div className="relative z-10 mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
-                    }
-                  />
+                    </div>
+                    <h3 className="relative z-10 text-xl font-bold text-gray-900 group-hover:text-blue-900">
+                      {school.name}
+                    </h3>
+                    <div className="relative z-10 mt-4 flex gap-3">
+                      <button
+                        onClick={() => router.push(`/review?schoolId=${school.id}`)}
+                        className="flex-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700"
+                      >
+                        View Uploads
+                      </button>
+                      <button
+                        onClick={() => router.push(`/students?schoolId=${school.id}`)}
+                        className="flex-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+                      >
+                        View Students
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
@@ -638,6 +649,8 @@ export default function DashboardPage() {
           </>
         )}
       </section>
+
+    <Footer />
     </main>
   );
 }

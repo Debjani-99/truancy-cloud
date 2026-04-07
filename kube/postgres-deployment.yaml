@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: truancy-postgres
+  namespace: truancy-cloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: truancy-postgres
+  template:
+    metadata:
+      labels:
+        app: truancy-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: POSTGRES_PASSWORD
+              value: "truancyCloud"
+            - name: POSTGRES_DB
+              value: "mydb"
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: truancy-postgres-pvc

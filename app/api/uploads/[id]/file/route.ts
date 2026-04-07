@@ -59,7 +59,7 @@ function getS3Client() {
 }
 
 function getLocalPathFromStorageKey(storageKey: string) {
-  const baseDir = path.join(process.cwd(), "uploads");
+  const baseDir = process.env.UPLOAD_DIR || "/tmp/uploads";
 
   const safeKey = storageKey.replace(/^\/+/, "");
   const fullPath = path.normalize(path.join(baseDir, safeKey));

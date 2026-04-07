@@ -14,13 +14,21 @@ spec:
     spec:
       containers:
         - name: web
-          image: ghcr.io/debjani-99/truancy-cloud:sha-932ee7c
+          image: ghcr.io/debjani-99/truancy-cloud:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
           env:
             - name: NODE_ENV
               value: "production"
+            - name: DATABASE_URL
+              value: "postgresql://postgres:truancyCloud@truancy-postgres-svc:5432/mydb?schema=public"
+            - name: NEXTAUTH_SECRET
+              value: "truancy-cloud-demo-super-secret-change-me"
+            - name: NEXTAUTH_URL
+              value: "https://truancy-cloud-demo.nrp-nautilus.io"
+            - name: UPLOAD_DIR
+              value: "/tmp/uploads"
           resources:
             requests:
               cpu: "250m"
