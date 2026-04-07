@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth";
+import { Info } from "lucide-react";
 
 type StudentPageProps = {
   params: Promise<{ id: string }>;
@@ -188,8 +189,11 @@ export default async function StudentDetailPage({ params }: StudentPageProps) {
     };
   });
 
-  const chartData = preparedHistory.map((row) => ({
-    uploadDate: formatDate(row.report.createdAt),
+  const chartData = preparedHistory.map((row, index) => ({
+    uploadDate:
+      preparedHistory.length <= 6
+      ? formatDate(row.report.createdAt)
+      : `Snapshot ${index + 1}`,
     reportDate: row.report.createdAt,
     absencePercent: row.truancyPercent,
     excusedHours: row.excusedHours ?? 0,
@@ -241,302 +245,279 @@ const addedHoursTrendDiff = hasComparison
   const hasEnoughHistoryForComparison = hasComparison;
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-6 md:px-6 md:py-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        {/* Top nav */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-medium text-slate-500">
-              Student Dashboard
-            </p>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-              {student.firstName} {student.lastName}
-            </h1>
-          </div>
-
-          <Link
-            href={backHref}
-            className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100"
-          >
-            ← Back to Results
-          </Link>
+  <main className="min-h-screen bg-slate-100 px-4 py-6 md:px-6 md:py-8">
+    <div className="mx-auto max-w-7xl space-y-6">
+      {/* Top nav */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-medium uppercase tracking-wide text-slate-500">
+            Student Dashboard
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-950">
+            {student.firstName} {student.lastName}
+          </h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Attendance risk overview, trend monitoring, and snapshot history
+          </p>
         </div>
 
-        {/* Top overview area */}
-        <section className="grid gap-6 xl:grid-cols-[1.65fr_0.95fr]">
-          {/* Left hero */}
-          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex items-start gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-lg font-bold text-slate-700">
-                {getInitials(student.firstName, student.lastName)}
-              </div>
+        <Link
+          href={backHref}
+          className="inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+        >
+          ← Back to Results
+        </Link>
+      </div>
 
-              <div className="min-w-0">
+      {/* Header summary */}
+      <section className="space-y-4">
+
+        {/* Avatar + name card ONLY */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-5">
+          <div className="flex items-start gap-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-lg font-bold text-blue-700">
+              {getInitials(student.firstName, student.lastName)}
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-3">
                 <h2 className="text-2xl font-bold text-slate-900">
                   {student.firstName} {student.lastName}
                 </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  Current attendance status, snapshot history, and trend overview for review
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <InfoCard
-                label="Student Ref"
-                value={student.studentRef || "Data not available"}
-              />
-              <InfoCard
-                label="School"
-                value={student.school.name || "Data not available"}
-              />
-              <InfoCard
-                label="Current School Year"
-                value={latestRecord?.schoolYear || "Data not available"}
-              />
-              <InfoCard
-                label="Latest Report Date"
-                value={formatDate(latestRecord?.report?.createdAt)}
-              />
-            </div>
-          </section>
-
-          {/* Right summary sidebar */}
-          <section className="space-y-4">
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-sm font-medium text-slate-500">Absence %</p>
-              <p className="mt-3 text-5xl font-bold tracking-tight text-slate-900">
-                {currentTruancyPercent.toFixed(2)}%
-              </p>
-              <div className="mt-4">
                 <span
-                  className={`inline-flex rounded-full border px-3 py-1.5 text-sm font-semibold ${currentStatus.badgeClass}`}
+                  className={`inline-flex rounded-full border px-3 py-1 text-sm font-semibold ${currentStatus.badgeClass}`}
                 >
                   {currentStatus.label}
                 </span>
               </div>
-            </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-sm font-medium text-slate-500">
-                Quick Summary
+              <p className="mt-2 text-sm text-slate-600">
+                {student.school.name} • Student Ref: {student.studentRef || "Data not available"}
               </p>
-              <dl className="mt-4 space-y-3 text-sm">
-                <SummaryRow
-                  label="Unexcused"
-                  value={formatHours(latestRecord?.unexcusedHours)}
-                />
-                <SummaryRow
-                  label="Total Abs"
-                  value={formatHours(latestRecord?.totalAbsHours)}
-                />
-                <SummaryRow
-                  label="Total Hours"
-                  value={formatHours(latestRecord?.totalHours)}
-                />
-                <SummaryRow label="Snapshots" value={String(preparedHistory.length)} />
-              </dl>
             </div>
-          </section>
-        </section>
-
-        {/* Highlight cards */}
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
-          <StatCard
-            title="Excused"
-            value={formatHours(latestRecord?.excusedHours)}
-          />
-          <StatCard
-            title="Unexcused"
-            value={formatHours(latestRecord?.unexcusedHours)}
-          />
-          <StatCard
-            title="Medical"
-            value={formatHours(latestRecord?.medicalExcusedHours)}
-          />
-          <StatCard
-            title="Suspension"
-            value={formatHours(latestRecord?.suspensionHours)}
-          />
-          <StatCard
-            title="Added"
-            value={formatHours(latestRecord?.addedHours)}
-          />
-          <StatCard
-            title="Total Abs"
-            value={formatHours(latestRecord?.totalAbsHours)}
-          />
-          <StatCard
-            title="Total Hours"
-            value={formatHours(latestRecord?.totalHours)}
-          />
-          <StatCard
-            title="Absence %"
-            value={`${currentTruancyPercent.toFixed(2)}%`}
-          />
-        </section>
-
-        {/* Middle section */}
-        <section className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
-          <Panel
-            title="Absence Trend"
-            subtitle="Upload date on the x-axis and absence percentage on the y-axis."
-          >
-            {chartData.length <= 1 ? (
-              <EmptyPanel
-                message="Trend will appear once more snapshots are available."
-                tall
-              />
-            ) : (
-              <TrendChart data={chartData} />
-            )}
-          </Panel>
-
-          <div className="space-y-6">
-            <Panel
-              title="Recent Change"
-              subtitle="Compare the latest snapshot with the previous one."
-            >
-              {!hasEnoughHistoryForComparison ? (
-                <EmptyPanel message="No comparison available yet." />
-              ) : (
-                <RecentChange history={history} />
-              )}
-            </Panel>
-
-            <Panel
-              title="Risk Message"
-              subtitle="Simple rule-based guidance for review."
-            >
-              <RiskMessage
-                currentTruancyPercent={currentTruancyPercent}
-                history={history}
-              />
-            </Panel>
           </div>
-        </section>
+        </div>
 
-        {/* Detailed history */}
+        {/* Small info cards OUTSIDE the white card */}
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <InfoCard
+            label="Current School Year"
+            value={latestRecord?.schoolYear || "Data not available"}
+            tone="blue"
+          />
+          <InfoCard
+            label="Latest Report Date"
+            value={formatDate(latestRecord?.report?.createdAt)}
+            tone="slate"
+          />
+          <InfoCard
+            label="Snapshots"
+            value={String(preparedHistory.length)}
+            tone="slate"
+          />
+          <InfoCard
+            label="School"
+            value={student.school.name || "Data not available"}
+            tone="slate"
+          />
+        </div>
+
+      </section>
+
+      {/* Main analytics area */}
+      <section className="grid gap-6 xl:grid-cols-[1.75fr_0.95fr]">
         <Panel
-          title="Student History"
-          subtitle="One row per uploaded attendance snapshot with detailed attendance data."
-        >
-          {!hasHistory ? (
-            <EmptyPanel message="History data is not available yet." />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200 text-left text-slate-500">
-                    <th className="px-4 py-3 font-medium">Upload Date</th>
-                    <th className="px-4 py-3 font-medium">School Year</th>
-                    <th className="px-4 py-3 font-medium">Excused</th>
-                    <th className="px-4 py-3 font-medium">Unexcused</th>
-                    <th className="px-4 py-3 font-medium">Medical</th>
-                    <th className="px-4 py-3 font-medium">Suspension</th>
-                    <th className="px-4 py-3 font-medium">Added</th>
-                    <th className="px-4 py-3 font-medium">Total Abs</th>
-                    <th className="px-4 py-3 font-medium">Total Hours</th>
-                    <th className="px-4 py-3 font-medium">Absence %</th>
-                    <th className="px-4 py-3 font-medium">Flag</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {preparedHistory.map((row) => {
-                    return (
-                      <tr key={row.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 text-slate-700">
-                          {formatDate(row.report.createdAt)}
-                        </td>
-                        <td className="px-4 py-3 text-slate-900">
-                          {row.schoolYear || "Data not available"}
-                        </td>
-                        <td className="px-4 py-3 text-slate-900">
-                          {formatHours(row.excusedHours)}
-                        </td>
-                        <td className="px-4 py-3 font-medium text-slate-900">
-                          {formatHours(row.unexcusedHours)}
-                        </td>
-                        <td className="px-4 py-3 text-slate-900">
-                          {formatHours(row.medicalExcusedHours)}
-                        </td>
-                        <td className="px-4 py-3 text-slate-900">
-                          {formatHours(row.suspensionHours)}
-                        </td>
-                        <td className="px-4 py-3 text-slate-900">
-                          {formatHours(row.addedHours)}
-                        </td>
-                        <td className="px-4 py-3 text-slate-900">
-                          {formatHours(row.totalAbsHours)}
-                        </td>
-                        <td className="px-4 py-3 text-slate-900">
-                          {formatHours(row.totalHours)}
-                        </td>
-                        <td className="px-4 py-3 font-semibold text-slate-900">
-                          {row.truancyPercent.toFixed(2)}%
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${row.status.badgeClass}`}
-                          >
-                            {row.status.label}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          title={
+            <div className="flex items-center gap-2">
+              <span>Absence Trend</span>
+              <Link
+                href={`/help/trend?studentId=${student.id}`}
+                className="flex items-center"
+              >
+                <Info className="h-4 w-4 text-blue-500 hover:text-blue-700" />
+              </Link>
             </div>
+          }
+          subtitle="Trend across uploaded attendance snapshots."
+        >
+          {chartData.length <= 1 ? (
+            <EmptyPanel
+              message="Trend will appear once more snapshots are available."
+              tall
+            />
+          ) : (
+            <TrendChart data={chartData} />
           )}
         </Panel>
 
-        {/* Notes at bottom */}
-        <Panel
-          title="Court Notes"
-          subtitle="Internal notes for court review and follow-up."
-        >
-          <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <p className="mb-3 text-sm font-semibold text-slate-900">
-                Add a Note
-              </p>
-
-              <textarea
-                readOnly
-                placeholder="Court users will be able to save internal notes here for later review."
-                className="min-h-[180px] w-full resize-none rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none placeholder:text-slate-400"
-              />
-
-              <div className="mt-3 flex justify-end">
-                <button
-                  disabled
-                  className="rounded-xl bg-slate-300 px-4 py-2 text-sm font-semibold text-white"
+        <div className="space-y-6">
+          <Panel
+            title={
+              <div className="flex items-center gap-2">
+                <span>Recent Change</span>
+                <Link
+                  href={`/help/recent-change?studentId=${student.id}`}
+                  className="flex items-center"
                 >
-                  Save Note
-                </button>
+                  <Info className="h-4 w-4 text-blue-500 hover:text-blue-700" />
+                </Link>
               </div>
-            </div>
+            }
+            subtitle="Compare the latest snapshot with the previous one."
+          >
+            {!hasEnoughHistoryForComparison ? (
+              <EmptyPanel message="No comparison available yet." />
+            ) : (
+              <RecentChange history={history} />
+            )}
+          </Panel>
 
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4">
-              <p className="mb-3 text-sm font-semibold text-slate-900">
-                Saved Notes
-              </p>
-              <div className="flex min-h-[180px] items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white px-4 text-center text-sm text-slate-500">
-                Saved court notes will appear here once note storage is
-                connected.
+          <Panel
+            title={
+              <div className="flex items-center gap-2">
+                <span>Risk Message</span>
+                <Link
+                  href={`/help/risk?studentId=${student.id}`}
+                  className="flex items-center"
+                >
+                  <Info className="h-4 w-4 text-blue-500 hover:text-blue-700" />
+                </Link>
               </div>
+            }
+            subtitle="Rule-based guidance for review."
+          >
+            <RiskMessage
+              currentTruancyPercent={currentTruancyPercent}
+              history={history}
+            />
+          </Panel>
+
+          <Panel
+            title="Court Notes"
+            subtitle="Placeholder for future court note entry and saved notes."
+          >
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+              <p className="text-sm font-medium text-slate-700">
+                Court notes will be added here in a future update.
+              </p>
+              <p className="mt-2 text-sm text-slate-500">
+                This area will support note entry, saved note history, and follow-up tracking.
+              </p>
             </div>
+          </Panel>
+        </div>
+      </section>
+
+      {/* Detailed current snapshot breakdown */}
+      <Panel
+        title="Detailed Snapshot Breakdown"
+        subtitle="Full current attendance metrics from the latest processed snapshot."
+      >
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard label="Excused Hours" value={formatHours(latestRecord?.excusedHours)} />
+          <MetricCard label="Medical Excused" value={formatHours(latestRecord?.medicalExcusedHours)} />
+          <MetricCard label="Suspension Hours" value={formatHours(latestRecord?.suspensionHours)} />
+          <MetricCard label="Added Hours" value={formatHours(latestRecord?.addedHours)} />
+          <MetricCard label="Total Hours" value={formatHours(latestRecord?.totalHours)} />
+          <MetricCard label="Total Abs Hours" value={formatHours(latestRecord?.totalAbsHours)} />
+          <MetricCard label="Unexcused Hours" value={formatHours(latestRecord?.unexcusedHours)} />
+          <MetricCard label="Absence %" value={`${currentTruancyPercent.toFixed(2)}%`} />
+        </div>
+      </Panel>
+
+      {/* Detailed history */}
+      <Panel
+        title="Student History"
+        subtitle="One row per uploaded attendance snapshot with detailed attendance data."
+      >
+        {!hasHistory ? (
+          <EmptyPanel message="History data is not available yet." />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-left text-slate-500">
+                  <th className="px-4 py-3 font-medium">Upload Date</th>
+                  <th className="px-4 py-3 font-medium">School Year</th>
+                  <th className="px-4 py-3 font-medium">Excused</th>
+                  <th className="px-4 py-3 font-medium">Unexcused</th>
+                  <th className="px-4 py-3 font-medium">Medical</th>
+                  <th className="px-4 py-3 font-medium">Suspension</th>
+                  <th className="px-4 py-3 font-medium">Added</th>
+                  <th className="px-4 py-3 font-medium">Total Abs</th>
+                  <th className="px-4 py-3 font-medium">Total Hours</th>
+                  <th className="px-4 py-3 font-medium">Absence %</th>
+                  <th className="px-4 py-3 font-medium">Flag</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {preparedHistory.map((row) => (
+                  <tr key={row.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3 text-slate-700">
+                      {formatDate(row.report.createdAt)}
+                    </td>
+                    <td className="px-4 py-3 text-slate-900">
+                      {row.schoolYear || "Data not available"}
+                    </td>
+                    <td className="px-4 py-3 text-slate-900">
+                      {formatHours(row.excusedHours)}
+                    </td>
+                    <td className="px-4 py-3 font-medium text-slate-900">
+                      {formatHours(row.unexcusedHours)}
+                    </td>
+                    <td className="px-4 py-3 text-slate-900">
+                      {formatHours(row.medicalExcusedHours)}
+                    </td>
+                    <td className="px-4 py-3 text-slate-900">
+                      {formatHours(row.suspensionHours)}
+                    </td>
+                    <td className="px-4 py-3 text-slate-900">
+                      {formatHours(row.addedHours)}
+                    </td>
+                    <td className="px-4 py-3 text-slate-900">
+                      {formatHours(row.totalAbsHours)}
+                    </td>
+                    <td className="px-4 py-3 text-slate-900">
+                      {formatHours(row.totalHours)}
+                    </td>
+                    <td className="px-4 py-3 font-semibold text-slate-900">
+                      {row.truancyPercent.toFixed(2)}%
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${row.status.badgeClass}`}
+                      >
+                        {row.status.label}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </Panel>
-      </div>
-    </main>
-  );
+        )}
+      </Panel>
+    </div>
+  </main>
+);
 }
 
-function InfoCard({ label, value }: { label: string; value: string }) {
+function InfoCard({
+  label,
+  value,
+  tone = "slate",
+}: {
+  label: string;
+  value: string;
+  tone?: "slate" | "blue";
+}) {
+  const toneClass =
+    tone === "blue"
+      ? "border-blue-200 bg-blue-50"
+      : "border-slate-200 bg-slate-50";
+
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+    <div className={`rounded-2xl border p-4 ${toneClass}`}>
       <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
         {label}
       </p>
@@ -554,13 +535,14 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function StatCard({ title, value }: { title: string; value: string }) {
+
+function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-sm font-medium text-slate-500">{title}</p>
-      <p className="mt-3 text-2xl font-bold tracking-tight text-slate-900">
-        {value}
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+        {label}
       </p>
+      <p className="mt-2 text-lg font-semibold text-slate-900">{value}</p>
     </div>
   );
 }
@@ -570,7 +552,7 @@ function Panel({
   subtitle,
   children,
 }: {
-  title: string;
+  title: React.ReactNode;
   subtitle?: string;
   children: React.ReactNode;
 }) {
@@ -621,117 +603,322 @@ function TrendChart({
     addedHours: number;
   }[];
 }) {
-  const width = 640;
-  const height = 260;
-  const padding = 40;
+  const width = 760;
+  const height = 360;
+  const padding = { top: 32, right: 36, bottom: 70, left: 64 };
 
-  const maxY = Math.max(...data.map((p) => p.absencePercent), 10);
-  const usableWidth = width - padding * 2;
-  const usableHeight = height - padding * 2;
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
 
-  const points = data.map((point, index) => {
-    const x =
-      data.length === 1
-        ? width / 2
-        : padding + (index / (data.length - 1)) * usableWidth;
+  const maxDataY = Math.max(...data.map((d) => d.absencePercent), 10);
+  const maxY = Math.max(12, Math.ceil(maxDataY + 1));
 
-    const y =
-      padding +
-      usableHeight -
-      (point.absencePercent / maxY) * usableHeight;
+  const thresholds = [
+    { value: 5, label: "Watch", line: "#EAB308", fill: "#F0FDF4" },
+    { value: 7, label: "Court Warning", line: "#F59E0B", fill: "#FEFCE8" },
+    { value: 10, label: "At Risk", line: "#EF4444", fill: "#FFF7ED" },
+  ];
 
-    return { ...point, x, y };
-  });
+  const getY = (value: number) =>
+    padding.top + chartHeight - (value / maxY) * chartHeight;
+
+  const getX = (index: number) =>
+    data.length === 1
+      ? padding.left + chartWidth / 2
+      : padding.left + (index / (data.length - 1)) * chartWidth;
+
+  const getRiskStatus = (value: number) => {
+    if (value >= 10) return { label: "At Risk", color: "#DC2626", fill: "#FEF2F2" };
+    if (value >= 7) return { label: "Court Warning", color: "#EA580C", fill: "#FFF7ED" };
+    if (value >= 5) return { label: "At Watch", color: "#CA8A04", fill: "#FEFCE8" };
+    return { label: "Normal", color: "#059669", fill: "#ECFDF5" };
+  };
+
+  const points = data.map((point, index) => ({
+    ...point,
+    x: getX(index),
+    y: getY(point.absencePercent),
+    xLabel:
+      data.length <= 6
+        ? point.uploadDate
+        : `S${index + 1}`,
+  }));
 
   const polylinePoints = points.map((p) => `${p.x},${p.y}`).join(" ");
   const latestPoint = points[points.length - 1];
+  const previousPoint = points.length > 1 ? points[points.length - 2] : null;
+
+  const latestRisk = getRiskStatus(latestPoint.absencePercent);
+
+  const trendLabel = previousPoint
+    ? latestPoint.absencePercent > previousPoint.absencePercent
+      ? "Increasing"
+      : latestPoint.absencePercent < previousPoint.absencePercent
+        ? "Improving"
+        : "Stable"
+    : "No comparison";
+
+  const trendTone =
+    trendLabel === "Increasing"
+      ? "border-red-200 bg-red-50 text-red-700"
+      : trendLabel === "Improving"
+        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+        : "border-slate-200 bg-slate-50 text-slate-700";
+
+  const latestDelta =
+    previousPoint != null
+      ? Number((latestPoint.absencePercent - previousPoint.absencePercent).toFixed(2))
+      : 0;
+
+  const yTicks = [0, 3, 5, 7, 10, maxY]
+    .filter((v, i, arr) => arr.indexOf(v) === i)
+    .sort((a, b) => a - b);
 
   return (
     <div className="space-y-4">
+      {/* KPI / legend row */}
+      <div className="flex flex-wrap gap-3">
+        <div
+          className={`inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-semibold`}
+          style={{
+            borderColor: latestRisk.color + "33",
+            backgroundColor: latestRisk.fill,
+            color: latestRisk.color,
+          }}
+        >
+          Current Status: {latestRisk.label}
+        </div>
+
+        <div className={`inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-semibold ${trendTone}`}>
+          Trend: {trendLabel}
+        </div>
+
+        <div className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-700">
+          Latest %: {latestPoint.absencePercent.toFixed(2)}%
+        </div>
+      </div>
+
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <svg
           viewBox={`0 0 ${width} ${height}`}
-          className="h-[260px] w-full"
+          className="h-[340px] w-full"
           role="img"
           aria-label="Absence trend chart"
         >
-          {[0, 0.25, 0.5, 0.75, 1].map((step) => {
-            const y = padding + usableHeight - usableHeight * step;
-            const label = `${(maxY * step).toFixed(0)}%`;
+          <defs>
+            <linearGradient id="trendLineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#2563EB" />
+              <stop offset="100%" stopColor="#0F172A" />
+            </linearGradient>
 
+            <filter id="latestGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          {/* Threshold bands */}
+          <rect
+            x={padding.left}
+            y={getY(5)}
+            width={chartWidth}
+            height={getY(0) - getY(5)}
+            fill="#ECFDF5"
+          />
+          <rect
+            x={padding.left}
+            y={getY(7)}
+            width={chartWidth}
+            height={getY(5) - getY(7)}
+            fill="#FEFCE8"
+          />
+          <rect
+            x={padding.left}
+            y={getY(10)}
+            width={chartWidth}
+            height={getY(7) - getY(10)}
+            fill="#FFF7ED"
+          />
+          <rect
+            x={padding.left}
+            y={padding.top}
+            width={chartWidth}
+            height={getY(10) - padding.top}
+            fill="#FEF2F2"
+          />
+
+          {/* Grid lines + y labels */}
+          {yTicks.map((tick) => {
+            const y = getY(tick);
             return (
-              <g key={step}>
+              <g key={tick}>
                 <line
-                  x1={padding}
+                  x1={padding.left}
                   y1={y}
-                  x2={width - padding}
+                  x2={width - padding.right}
                   y2={y}
-                  stroke="#E2E8F0"
+                  stroke="#CBD5E1"
                   strokeDasharray="4 4"
                 />
                 <text
-                  x={padding - 10}
+                  x={padding.left - 12}
                   y={y + 4}
                   textAnchor="end"
-                  fontSize="10"
+                  fontSize="11"
                   fill="#64748B"
                 >
-                  {label}
+                  {tick.toFixed(0)}%
                 </text>
               </g>
             );
           })}
 
+          {/* Threshold lines + labels */}
+          {thresholds.map((t) => {
+            const y = getY(t.value);
+            return (
+              <g key={t.value}>
+                <line
+                  x1={padding.left}
+                  y1={y}
+                  x2={width - padding.right}
+                  y2={y}
+                  stroke={t.line}
+                  strokeWidth="1.5"
+                  strokeDasharray="6 6"
+                />
+                <rect
+                  x={width - padding.right - 116}
+                  y={y - 14}
+                  width="110"
+                  height="18"
+                  rx="9"
+                  fill="white"
+                  opacity="0.92"
+                />
+                <text
+                  x={width - padding.right - 61}
+                  y={y - 2}
+                  textAnchor="middle"
+                  fontSize="10"
+                  fontWeight="600"
+                  fill={t.line}
+                >
+                  {t.label} • {t.value}%
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Axes */}
           <line
-            x1={padding}
-            y1={padding}
-            x2={padding}
-            y2={height - padding}
-            stroke="#CBD5E1"
+            x1={padding.left}
+            y1={padding.top}
+            x2={padding.left}
+            y2={height - padding.bottom}
+            stroke="#94A3B8"
+            strokeWidth="1.2"
           />
           <line
-            x1={padding}
-            y1={height - padding}
-            x2={width - padding}
-            y2={height - padding}
-            stroke="#CBD5E1"
+            x1={padding.left}
+            y1={height - padding.bottom}
+            x2={width - padding.right}
+            y2={height - padding.bottom}
+            stroke="#94A3B8"
+            strokeWidth="1.2"
           />
 
+          {/* Line */}
           <polyline
             fill="none"
             points={polylinePoints}
-            stroke="#0F172A"
-            strokeWidth="3"
+            stroke="#1E3A8A"
+            strokeWidth="5"
             strokeLinejoin="round"
             strokeLinecap="round"
           />
 
-          {points.map((p, index) => (
-            <g key={`${p.uploadDate}-${index}`}>
-              <circle
-                cx={p.x}
-                cy={p.y}
-                r="5"
-                fill="#0F172A"
-              />
-            </g>
-          ))}
+          {/* Area under line */}
+          <polygon
+            points={`${padding.left},${height - padding.bottom} ${polylinePoints} ${width - padding.right},${height - padding.bottom}`}
+            fill="#2563EB"
+            opacity="0.06"
+          />
 
+          {/* Points */}
+          {points.map((p, index) => {
+            const isLatest = index === points.length - 1;
+            const pointColor = isLatest ? latestRisk.color : "#1E293B";
+
+            return (
+              <g key={`${p.uploadDate}-${index}`}>
+                {isLatest && (
+                  <circle
+                    cx={p.x}
+                    cy={p.y}
+                    r="11"
+                    fill={pointColor}
+                    opacity="0.14"
+                    filter="url(#latestGlow)"
+                  />
+                )}
+                <circle
+                  cx={p.x}
+                  cy={p.y}
+                  r={isLatest ? 6.5 : 4.5}
+                  fill={pointColor}
+                  stroke="white"
+                  strokeWidth={isLatest ? 3 : 2}
+                />
+              </g>
+            );
+          })}
+
+          {/* X labels */}
           {points.map((p, index) => (
             <text
               key={`${p.uploadDate}-label-${index}`}
               x={p.x}
-              y={height - 12}
+              y={height - padding.bottom + 26}
               textAnchor="middle"
-              fontSize="10"
+              fontSize="11"
               fill="#64748B"
             >
-              {p.uploadDate}
+              {p.xLabel}
             </text>
           ))}
+
+          {/* Axis titles */}
+          <text
+            x={padding.left - 44}
+            y={padding.top - 8}
+            fontSize="11"
+            fontWeight="600"
+            fill="#475569"
+          >
+            Percent
+          </text>
+          <text
+            x={width / 2}
+            y={height - 18}
+            textAnchor="middle"
+            fontSize="11"
+            fontWeight="600"
+            fill="#475569"
+          >
+            Uploaded attendance snapshots
+          </text>
         </svg>
+
+        <p className="mt-3 text-xs text-slate-500">
+          **Absence % in this dashboard is based on unexcused hours only.
+        </p>
       </div>
 
+      {/* Bottom business summary row */}
       <div className="grid gap-3 md:grid-cols-4">
         <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
@@ -753,19 +940,27 @@ function TrendChart({
 
         <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Unexcused Hours
+            Recent Change
           </p>
-          <p className="mt-1 text-sm font-semibold text-slate-900">
-            {latestPoint.unexcusedHours.toFixed(2)}
+          <p
+            className={`mt-1 text-sm font-semibold ${
+              latestDelta > 0
+                ? "text-red-700"
+                : latestDelta < 0
+                  ? "text-emerald-700"
+                  : "text-slate-900"
+            }`}
+          >
+            {previousPoint ? `${latestDelta > 0 ? "+" : ""}${latestDelta.toFixed(2)}%` : "N/A"}
           </p>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Total Abs Hours
+            Unexcused Hours
           </p>
           <p className="mt-1 text-sm font-semibold text-slate-900">
-            {latestPoint.totalAbsHours.toFixed(2)}
+            {latestPoint.unexcusedHours.toFixed(2)}
           </p>
         </div>
       </div>
