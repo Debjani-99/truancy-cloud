@@ -145,18 +145,18 @@ async function main() {
   });
 
   // Seed admin user for password change 
-  await prisma.user.upsert({
-    where: { email: "truancycloud@gmail.com" },
-    update: {},
-    create: {
-      firstName: "Truancy Cloud",
-      lastName: "Admin",
-      email: "truancycloud@gmail.com",
-      passwordHash,
-      role: "ADMIN",
-      firstTimeUser: false,
-    },  
-  });
+  //await prisma.user.upsert({
+    //where: { email: "truancycloud@gmail.com" },
+    //update: {},
+   // create: {
+    //  firstName: "Truancy Cloud",
+    //  lastName: "Admin",
+    //  email: "truancycloud@gmail.com",
+   //   passwordHash,
+   //   role: "ADMIN",
+   //   firstTimeUser: false,
+  //  },  
+ // });
 
   // Seed parent user with account setup
   await prisma.user.upsert({

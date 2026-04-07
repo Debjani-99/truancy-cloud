@@ -64,10 +64,11 @@ function Card({
   );
 }
 
-export default function ChangePasswordPage() {
-    const [currentPassword, setCurrentPassword] = useState("");
-    const [newPassword, setNewPassword] = useState("");
-    const [newPassword2, setNewPassword2] = useState("");
+export default function CreateAccountPage() {
+    const [schoolName, setSchoolName] = useState("");
+    const [email, setEmail] = useState("");
+    const [newRole, setNewRole] = useState("");
+    const [studentId, setStudentId] = useState("");
 
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
@@ -79,50 +80,67 @@ export default function ChangePasswordPage() {
         setError(null);
         setMessage(null);
 
-        const res = await fetch("/api/update-password", {
+        if (newRole == "SCHOOL") {
+          const res = await fetch("/api/initialize-users/new-school", {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                currentPassword,
-                newPassword,
-                newPassword2
+                schoolName,
+                email,
+                newRole
             }),
-        });
+          });
 
-        const data = await res.json();
+          const data = await res.json();
 
-        if (data.redirect) {
+          if (data.redirect) {
           window.location.href = data.redirect;
           return;
-        }
+          }
 
-        if (!res.ok) {
+          if (!res.ok) {
             setError(data.error || "Something went wrong");
-        } else {
-            setMessage("Password update successfully");
-            setCurrentPassword("");
-            setNewPassword("");
-            setNewPassword2("");
+          } else {
+            setMessage("School Account Created Successfully");
+            setSchoolName("");
+            setEmail("");
+            setNewRole("");
+          }
+        
+          setLoading(false);
         }
+
+        if (newRole == "PARENT") {
+          const res = await fetch("/api/initialize-users/new-parent", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                newRole,
+                studentId
+            }),
+          });
+
+          const data = await res.json();
+
+          if (data.redirect) {
+          window.location.href = data.redirect;
+          return;
+          }
+
+          if (!res.ok) {
+            setError(data.error || "Something went wrong");
+          } else {
+            setMessage("Parent Account Created Successfully");
+            setNewRole("");
+            setStudentId("");
+          }
         
-        setLoading(false);
+          setLoading(false);
+        }
 
         
-    }
-
-    async function handleSendEmail() {
-      const res = await fetch("/api/send-email", {
-        method: "POST",
-        credentials: "include",
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        alert("Email sent successfully!");
-      } else {
-        alert("Failed to send email");
-      }
     }
 
     // THIS IS ALL FROM DASHBOARD
@@ -280,60 +298,81 @@ export default function ChangePasswordPage() {
            </header>
            {/* MAIN CARD */}
            <section className="relative z-10 mx-auto max-w-7xl px-6 py-12">
-            <h1 className="text-2xl font-semibold mb-6">Change Password</h1>
+            <h1 className="text-2xl font-semibold mb-6">Account Creation</h1>
 
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label className="block mb-1 text-sm font-medium">Current Password</label>
-                     <input
-                       type="password"
+                    <label className="block mb-1 text-sm font-medium">Account Role</label>
+                     <select                       
                        className="w-full rounded-lg border px-3 py-2"
-                        value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
+                        value={newRole}
+                      onChange={(e) => setNewRole(e.target.value)}
                        required
-                    />
+                     >
+                      <option value="">Select a role</option>
+                      <option value="SCHOOL">School</option>
+                      <option value="PARENT">Parent</option>
+                    </select>
                 </div>
-
-                <div>
-                    <label className="block mb-1 text-sm font-medium">New Password</label>
+                {newRole === "SCHOOL" && (
+                  <div>
+                    <label className="block mb-1 text-sm font-medium">Account School Name</label>
                     <input
-                     type="password"
                      className="w-full rounded-lg border px-3 py-2"
-                     value={newPassword}
-                     onChange={(e) => setNewPassword(e.target.value)}
-                     required
+                     value={schoolName}
+                     onChange={(e) => setSchoolName(e.target.value)}
+                     required={newRole === "SCHOOL"}
                     />
-                </div>
+                  </div>
+                )}
 
-                <div>
-                    <label className="block mb-1 text-sm font-medium">Confirm New Password</label>
+                {newRole === "SCHOOL" && (
+                  <div>
+                    <label className="block mb-1 text-sm font-medium">Account Email</label>
                     <input
-                     type="password"
+                     type="email"
                      className="w-full rounded-lg border px-3 py-2"
-                     value={newPassword2}
-                     onChange={(e) => setNewPassword2(e.target.value)}
-                     required
+                     value={email}
+                     onChange={(e) => setEmail(e.target.value)}
+                     required={newRole === "SCHOOL"}
                     />
-                </div>
+                  </div>
+                )}
+
+
+                {newRole === "PARENT" && (
+                  <div>
+                    <label className="block mb-1 text-sm font-medium">Student ID for Account</label>
+                    <input
+                     className="w-full rounded-lg border px-3 py-2"
+                     value={studentId}
+                     onChange={(e) => setStudentId(e.target.value)}
+                     required={newRole === "PARENT"}
+                    />
+                  </div>
+                )}
 
                 {error && <p className="text-red-600 text-sm">{error}</p>}
                 {message && <p className="text-green-600 text-sm">{message}</p>}
 
-                <button
-                 type="submit"
-                 disabled={loading}
-                 className="w-full bg-black text-white py-2 rounded-lg hover:opacity-80"
-                >
-                  {loading ? "Updating..." : "Update Password"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSendEmail}
-                  disabled={loading}
-                  className="w-full bg-black text-white py-2 rounded-lg hover:opacity-80"
-                >
-                  {loading ? "Sending..." : "Send Email to Reset Password"}
-                </button>
+                {newRole === "SCHOOL" && (
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-black text-white py-2 rounded-lg hover:opacity-80"
+                  >
+                    {loading ? "Sending..." : "Send Email to Create School Account"}
+                  </button>
+                )}
+                {newRole === "PARENT" && (
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-black text-white py-2 rounded-lg hover:opacity-80"
+                  >
+                    {loading ? "Creating..." : "Create Parent Account"}
+                  </button>
+                )}
             </form>
         
            </section>     

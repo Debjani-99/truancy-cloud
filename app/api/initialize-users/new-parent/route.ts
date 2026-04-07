@@ -13,19 +13,23 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
-  const body = await req.json();
-  const { role, studentId } = body;
-
+  const { newRole, studentId } = await req.json();
+  
+  const sid = Number(studentId);
   
   if (!studentId) {
     return NextResponse.json({ error: "Must provide student ID for new parent account" }, { status: 400 });
+  }
+
+  if (isNaN(sid)) {
+    return NextResponse.json({ error: "Invalid Student ID" }, { status: 400 });
   }
 
 
   
   if (studentId) {
     const student = await prisma.student.findUnique({
-      where: { id: studentId },
+      where: { id: sid },
       include: { user: true },
     });
 
@@ -51,12 +55,16 @@ export async function POST(req: Request) {
     data: {
       firstName: "first",
       lastName: "last",
-      email: studentId.toLowerCase(),
+      email: studentId.toString(),
       passwordHash: hashed,
-      role,
-      studentId: studentId,
+      role: newRole,
+      studentId: sid,
     },
   });
 
-  return NextResponse.json(newUser, { status: 201 });
+  return NextResponse.json(
+  { success: true, userId: newUser.id.toString() },
+  { status: 201 }
+  );
+
 }
