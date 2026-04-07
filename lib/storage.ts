@@ -26,7 +26,7 @@ const s3 =
     : null;
 
 /* ── Local-disk fallback directory ──────────────────────────────── */
-const LOCAL_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads");
+const LOCAL_DIR = process.env.UPLOAD_DIR || "/tmp/uploads";
 
 /**
  * Store a file. Uses S3 when credentials are configured, otherwise
