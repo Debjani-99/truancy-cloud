@@ -14,15 +14,15 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
 
   
-  if (!session || !["ADMIN", "COURT"].includes(session.user.role)) {
+  if (!session || !["ADMIN"].includes(session.user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
-  const { schoolName, countyId, email, newRole } = await req.json();
+  const { countyName, email, newRole } = await req.json();
   
 
   
-  if (!(email || schoolName)) {
+  if (!(email || countyName)) {
     return NextResponse.json({ error: "Missing fields required for creating school account" }, { status: 400 });
   }
 
@@ -46,46 +46,39 @@ export async function POST(req: Request) {
   const hashed = await bcrypt.hash(tempcode, 10);
   
 
-  let finalCountyId = countyId;
 
-  if ((session.user.role == "COURT") && !finalCountyId) {
-    finalCountyId = session.user.countyId;
-
-    if (!finalCountyId) {
-     return NextResponse.json(
-      { error: "Court user has no assigned county"}, 
-      { status: 400 }
-      )
-    }    
-  }
-
-  const exists = await prisma.county.findUnique({
-    where: { id: finalCountyId },
-  });
-
-  if (!exists) {
-    return NextResponse.json(
-      { error: "Invalid: CountyId does not exist"},
-      { status: 400}
-    );
-  }
   
-  const school = await prisma.school.create({
-    data: {
-      name: schoolName,
-      countyId: finalCountyId,
-    },
-  });
+
+    const countyNameExists = await prisma.county.findUnique({
+      where: { name: countyName },
+    });
+  
+    if (countyNameExists) {
+      return NextResponse.json(
+        { error: "Invalid: Account already exists with this name"},
+        { status: 400}
+      );
+    }
+
+    const countyId = await prisma.county.findUnique({
+      where: { name: countyName },
+    });
+
+    if (!countyId){
+      return NextResponse.json(
+        { error: "Invalid: An account cannot be set up for this county"},
+        { status: 400}
+      );
+    }
 
   const newUser = await prisma.user.create({
     data: {
-      firstName: schoolName,
-      lastName: "Account",
+      firstName: countyName,
+      lastName: "Court",
       email: email.toLowerCase(),
       passwordHash: hashed,
-      role: "SCHOOL",
-      countyId: finalCountyId,
-      schoolId: school.id,
+      role: "COURT",
+      countyId: countyId.toString(),
     },
   });
 
@@ -97,10 +90,10 @@ export async function POST(req: Request) {
       subject: "Account Activation",
       html: `
         <h2>Account Activation</h2>
-        <p>Hello ${schoolName},</p>
+        <p>Hello,</p>
         <p>
         An account has been created for the Truancy Cloud portal 
-        for the school <strong>${schoolName}</strong> with the email address: <strong>${email}</strong>
+        for the county <strong>${countyName}</strong> with the email address: <strong>${email}</strong>
         </p>
         <p>To activate this account, please click on the link below and enter this email address,
         along with the temporary passcode provided below.

@@ -66,6 +66,8 @@ function Card({
 
 export default function CreateAccountPage() {
     const [schoolName, setSchoolName] = useState("");
+    const [countyName, setCountyName] = useState("");
+    const [countyId, setCountyId] = useState("");
     const [email, setEmail] = useState("");
     const [newRole, setNewRole] = useState("");
     const [studentId, setStudentId] = useState("");
@@ -87,6 +89,7 @@ export default function CreateAccountPage() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 schoolName,
+                countyId,
                 email,
                 newRole
             }),
@@ -104,6 +107,38 @@ export default function CreateAccountPage() {
           } else {
             setMessage("School Account Created Successfully");
             setSchoolName("");
+            setCountyId("");
+            setEmail("");
+            setNewRole("");
+          }
+        
+          setLoading(false);
+        }
+
+        if (newRole == "COURT") {
+          const res = await fetch("/api/initialize-users/new-court", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                countyName,
+                email,
+                newRole
+            }),
+          });
+
+          const data = await res.json();
+
+          if (data.redirect) {
+          window.location.href = data.redirect;
+          return;
+          }
+
+          if (!res.ok) {
+            setError(data.error || "Something went wrong");
+          } else {
+            setMessage("Court Account Created Successfully");
+            setCountyName("");
             setEmail("");
             setNewRole("");
           }
@@ -310,6 +345,7 @@ export default function CreateAccountPage() {
                        required
                      >
                       <option value="">Select a role</option>
+                      {role === "ADMIN" && (<option value="COURT">Court</option>)}
                       <option value="SCHOOL">School</option>
                       <option value="PARENT">Parent</option>
                     </select>
@@ -326,6 +362,18 @@ export default function CreateAccountPage() {
                   </div>
                 )}
 
+                {newRole === "SCHOOL" && role === "ADMIN" && (
+                  <div>
+                    <label className="block mb-1 text-sm font-medium">Account School County ID</label>
+                    <input
+                     className="w-full rounded-lg border px-3 py-2"
+                     value={countyId}
+                     onChange={(e) => setCountyId(e.target.value)}
+                     required={(newRole === "SCHOOL") && (role === "ADMIN")}
+                    />
+                  </div>
+                )}
+
                 {newRole === "SCHOOL" && (
                   <div>
                     <label className="block mb-1 text-sm font-medium">Account Email</label>
@@ -335,6 +383,32 @@ export default function CreateAccountPage() {
                      value={email}
                      onChange={(e) => setEmail(e.target.value)}
                      required={newRole === "SCHOOL"}
+                    />
+                  </div>
+                )}
+
+                {newRole === "COURT" && (
+                  <div>
+                    <label className="block mb-1 text-sm font-medium">Account County</label>
+                    <input
+                     className="w-full rounded-lg border px-3 py-2"
+                     value={schoolName}
+                     onChange={(e) => setCountyName(e.target.value)}
+                     required={newRole === "COURT"}
+                    />
+                  </div>
+                )}
+
+
+                {newRole === "COURT" && (
+                  <div>
+                    <label className="block mb-1 text-sm font-medium">Account Email</label>
+                    <input
+                     type="email"
+                     className="w-full rounded-lg border px-3 py-2"
+                     value={email}
+                     onChange={(e) => setEmail(e.target.value)}
+                     required={newRole === "COURT"}
                     />
                   </div>
                 )}
