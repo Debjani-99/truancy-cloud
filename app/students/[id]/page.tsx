@@ -325,7 +325,7 @@ const addedHoursTrendDiff = hasComparison
       </section>
 
       {/* Main analytics area */}
-      <section className="grid gap-6 xl:grid-cols-[1.75fr_0.95fr]">
+      <section className="grid items-start gap-6 xl:grid-cols-[1.75fr_0.95fr]">
         <Panel
           title={
             <div className="flex items-center gap-2">
@@ -350,62 +350,90 @@ const addedHoursTrendDiff = hasComparison
           )}
         </Panel>
 
-        <div className="space-y-6">
-          <Panel
-            title={
-              <div className="flex items-center gap-2">
-                <span>Recent Change</span>
-                <Link
-                  href={`/help/recent-change?studentId=${student.id}`}
-                  className="flex items-center"
-                >
-                  <Info className="h-4 w-4 text-blue-500 hover:text-blue-700" />
-                </Link>
-              </div>
-            }
-            subtitle="Compare the latest snapshot with the previous one."
-          >
-            {!hasEnoughHistoryForComparison ? (
-              <EmptyPanel message="No comparison available yet." />
-            ) : (
-              <RecentChange history={history} />
-            )}
-          </Panel>
+      <Panel
+  title={
+    <div className="flex items-center gap-2">
+      <span>Review Summary</span>
+      <Link
+        href={`/help/recent-change?studentId=${student.id}`}
+        className="flex items-center"
+      >
+        <Info className="h-4 w-4 text-blue-500 hover:text-blue-700" />
+      </Link>
+    </div>
+  }
+  subtitle="Recent attendance change and rule-based review guidance."
+>
+  <div className="space-y-6">
+    <div>
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        Recent Change
+      </p>
+      {!hasEnoughHistoryForComparison ? (
+        <EmptyPanel message="No comparison available yet." />
+      ) : (
+        <RecentChange history={history} />
+      )}
+    </div>
 
-          <Panel
-            title={
-              <div className="flex items-center gap-2">
-                <span>Risk Message</span>
-                <Link
-                  href={`/help/risk?studentId=${student.id}`}
-                  className="flex items-center"
-                >
-                  <Info className="h-4 w-4 text-blue-500 hover:text-blue-700" />
-                </Link>
-              </div>
-            }
-            subtitle="Rule-based guidance for review."
-          >
-            <RiskMessage
-              currentTruancyPercent={currentTruancyPercent}
-              history={history}
-            />
-          </Panel>
+    <div>
+      <div className="mb-3 flex items-center gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Risk Message
+        </p>
+        <Link
+          href={`/help/risk?studentId=${student.id}`}
+          className="flex items-center"
+        >
+          <Info className="h-4 w-4 text-blue-500 hover:text-blue-700" />
+        </Link>
+      </div>
 
-          <Panel
-            title="Court Notes"
-            subtitle="Placeholder for future court note entry and saved notes."
-          >
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-              <p className="text-sm font-medium text-slate-700">
-                Court notes will be added here in a future update.
-              </p>
-              <p className="mt-2 text-sm text-slate-500">
-                This area will support note entry, saved note history, and follow-up tracking.
-              </p>
-            </div>
-          </Panel>
-        </div>
+      <RiskMessage
+        currentTruancyPercent={currentTruancyPercent}
+        history={history}
+      />
+    </div>
+  </div>
+</Panel>
+</section>
+
+      <section className="grid gap-6 xl:grid-cols-2">
+        <Panel
+          title="Court Notes"
+          subtitle="View and manage internal notes for this student."
+        >
+          <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center">
+            <p className="text-sm font-medium text-slate-700">
+              Add and review internal notes for court follow-up.
+            </p>
+
+            <Link
+              href={`/students/${student.id}/notes`}
+              className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+            >
+              Open Notes
+            </Link>
+          </div>
+        </Panel>
+
+        <Panel
+          title="Truancy Letter"
+          subtitle="Generate a notice letter for mailing to the student's family."
+        >
+          <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center">
+            <p className="text-sm font-medium text-slate-700">
+              A truancy warning letter placeholder for court follow-up.
+            </p>
+
+            <button
+              type="button"
+              className="inline-flex items-center rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+            >
+              Generate Letter
+            </button>
+          </div>
+        </Panel>
       </section>
 
       {/* Detailed current snapshot breakdown */}
@@ -1044,8 +1072,7 @@ function RiskMessage({
     if (currentTruancyPercent >= 10) {
       return (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-slate-700">
-          This student is currently in the at-risk range. More snapshot history
-          is needed to determine whether risk is increasing or stabilizing.
+          This student is currently in the at-risk range. Immediate review is recommended based on the latest available attendance snapshot.
         </div>
       );
     }
@@ -1053,8 +1080,7 @@ function RiskMessage({
     if (currentTruancyPercent >= 7) {
       return (
         <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm leading-6 text-slate-700">
-          This student is currently in the court warning range. More history is
-          needed to determine the trend.
+          This student is currently in the court warning range. Closer review is recommended based on the latest available attendance snapshot.
         </div>
       );
     }
@@ -1062,70 +1088,45 @@ function RiskMessage({
     if (currentTruancyPercent >= 5) {
       return (
         <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-4 text-sm leading-6 text-slate-700">
-          This student is approaching a higher-risk threshold. Additional
-          snapshots will help confirm whether attendance is worsening.
+          This student is currently in the at-watch range. Continued monitoring is recommended to see whether attendance moves into a higher-risk range.
         </div>
       );
     }
 
     return (
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-slate-700">
-        This student is currently in the normal range. More history is needed to
-        determine whether the status remains stable over time.
+        This student is currently in the normal range. No immediate attendance concern is indicated from the latest available snapshot.
       </div>
     );
   }
 
-  const latest = history[history.length - 1];
-  const previous = history[history.length - 2];
-
-  const latestTruancy = calculateTruancyPercent(
-    latest.unexcusedHours,
-    latest.totalHours,
-  );
-  const previousTruancy = calculateTruancyPercent(
-    previous.unexcusedHours,
-    previous.totalHours,
-  );
-
-  if (latestTruancy > previousTruancy && latestTruancy >= 7) {
+  if (currentTruancyPercent >= 10) {
     return (
       <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-slate-700">
-        Risk appears to be increasing. Truancy percentage has gone up since the
-        previous snapshot and is now in a warning range.
+        This student is currently in the at-risk range. Immediate review is recommended because the current absence percentage is in the highest risk band.
       </div>
     );
   }
 
-  if (latestTruancy >= 5 && latestTruancy < 7) {
+  if (currentTruancyPercent >= 7) {
+    return (
+      <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm leading-6 text-slate-700">
+        This student is currently in the court warning range. Attendance should be reviewed closely because the current absence percentage is above the warning threshold.
+      </div>
+    );
+  }
+
+  if (currentTruancyPercent >= 5) {
     return (
       <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-4 text-sm leading-6 text-slate-700">
-        This student is approaching a threshold that may require closer review.
-      </div>
-    );
-  }
-
-  if (latestTruancy === previousTruancy) {
-    return (
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">
-        Attendance risk appears stable based on the most recent two snapshots.
-      </div>
-    );
-  }
-
-  if (latestTruancy < previousTruancy) {
-    return (
-      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-slate-700">
-        Attendance trend appears to be improving compared with the previous
-        snapshot.
+        This student is currently in the at-watch range. Continued monitoring is recommended because the current absence percentage is approaching a more serious threshold.
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">
-      Current attendance data is available. Continue monitoring future snapshots
-      for clearer trend information.
+    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-slate-700">
+      This student is currently in the normal range. Current attendance does not indicate a higher-risk status at this time.
     </div>
   );
 }

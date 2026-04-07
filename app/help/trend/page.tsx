@@ -86,13 +86,38 @@ export default async function TrendHelpPage({
         </section>
 
         <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">
+            How the trend is determined
+          </h2>
+
+          <p className="text-sm leading-6 text-slate-600">
+            The system compares the most recent attendance snapshot with the previous one.
+          </p>
+
+          <ul className="space-y-2 text-sm text-slate-600">
+            <li>
+              If the absence percentage increased, the trend is marked as worsening.
+            </li>
+            <li>
+              If the absence percentage decreased, the trend is marked as improving.
+            </li>
+            <li>
+              If there is little or no change, the trend is marked as stable.
+            </li>
+          </ul>
+
+          <p className="text-sm leading-6 text-slate-600">
+            This comparison helps quickly identify whether a student's attendance is getting better or worse over time.
+          </p>
+        </section>
+
+        <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">How to interpret the trend</h2>
 
           <ul className="space-y-2 text-sm text-slate-600">
             <li>🔺 <strong>Upward trend:</strong> Attendance is getting worse over time.</li>
             <li>🔻 <strong>Downward trend:</strong> Attendance is improving over time.</li>
             <li>➖ <strong>Flat trend:</strong> Attendance is relatively stable.</li>
-            <li>⚠️ <strong>Sharp increase:</strong> The student may need closer review soon.</li>
           </ul>
         </section>
 
