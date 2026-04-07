@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: truancy-web-ingress
+  namespace: truancy-cloud
+spec:
+  ingressClassName: haproxy
+  rules:
+    - host: truancy-cloud-demo.nrp-nautilus.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: truancy-web-svc
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - truancy-cloud-demo.nrp-nautilus.io
