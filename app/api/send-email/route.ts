@@ -14,7 +14,12 @@ export async function POST(req: Request) {
  
   const session = await getServerSession(authOptions);
 
-  const body = await req.json();
+  let body: { email?: string } = {};
+  try {
+    body = await req.json();
+  } catch {
+
+  }
   const email = body?.email?.toLowerCase().trim() || session?.user?.email;
 
   if (!email) {
@@ -43,7 +48,10 @@ export async function POST(req: Request) {
 
   await prisma.user.update({
     where: { id: user.id},
-    data: { passwordHash: hashed}
+    data: { 
+      passwordHash: hashed,
+      needsPasswordReset: true,
+    }
   });
   
   try {

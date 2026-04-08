@@ -12,6 +12,7 @@ declare module "next-auth" {
     schoolId?: string | null;
     studentId?: number | null;
     firstTimeUser: boolean;
+    needsPasswordReset: boolean;
   }
 
   interface Session {
@@ -26,6 +27,7 @@ declare module "next-auth" {
       schoolId?: string | null;
       studentId?: number | null;
       firstTimeUser: boolean;
+      needsPasswordReset: boolean;
     };
   }
 }
@@ -42,5 +44,6 @@ declare module "next-auth/jwt" {
     schoolId?: string | null;
     studentId?: number | null;
     firstTimeUser: boolean;
+    needsPasswordReset: boolean;
   }
 }

@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import Footer from "@/app/components/Footer";
 
 export default function LoginPage() {
-  const [form, setForm] = useState({ role: "", email: "", password: "" });
+  const [form, setForm] = useState(
+    { role: "", email: "", studentId: "", firstName: "", lastName: "", password: "" });
   const [error, setError] = useState("");
   const router = useRouter();
 
@@ -14,17 +15,24 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
 
-    const res = await signIn("credentials", {
-      email: form.email,
-      password: form.password,
-      redirect: false,
+    const res = await fetch("/api/activate-account", {
+      method: "POST",
+      headers: { "Content-Type": "application/json"},
+      body: JSON.stringify(form),
     });
 
-    if (res?.error) {
-      setError("Invalid email or password");
-    } else {
-      window.location.href = "/dashboard";
-    }
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error || "Account activation failed");
+      return;
+    } 
+
+    await signIn("credentials", {
+      email: form.email,
+      password: form.password,
+      callbackUrl: "/settings/change-password"
+    })
   }
 
   return (
@@ -76,15 +84,14 @@ export default function LoginPage() {
                 <select                       
                     className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm text-black placeholder-gray-400"
                     value={form.role}
-                    onChange={(e) => setRole(e.target.value)}
+                    onChange={(e) => setForm({ ...form, role: e.target.value})}
                     required
                 >
                   <option value="">Select a role</option>
                   <option value="COURT">Court</option>
-                  <option value="School">School</option>
+                  <option value="SCHOOL">School</option>
                   <option value="PARENT">Parent</option>
                 </select>
-                {((role === "COURT") || (role === "SCHOOL")) && (
                 <input
                   type="email"
                   placeholder="Email"
@@ -93,9 +100,9 @@ export default function LoginPage() {
                     setForm({ ...form, email: e.target.value })
                   }
                   className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm text-black placeholder-gray-400"
-                  required={(role === "COURT") || (role === "SCHOOL")}
-                />)}
-                {(role === "PARENT") && (
+                  required
+                />
+                {(form.role === "PARENT") && (
                 <input
                   placeholder="Student ID"
                   value={form.studentId}
@@ -103,7 +110,27 @@ export default function LoginPage() {
                     setForm({ ...form, studentId: e.target.value })
                   }
                   className="mt-3 w-full rounded-lg bg-white px-4 py-2.5 text-sm text-black placeholder-gray-400"
-                  required={role === "PARENT"}
+                  required={form.role === "PARENT"}
+                />)}
+                {(form.role === "PARENT") && (
+                <input
+                  placeholder="First Name"
+                  value={form.firstName}
+                  onChange={(e) =>
+                    setForm({ ...form, firstName: e.target.value })
+                  }
+                  className="mt-3 w-full rounded-lg bg-white px-4 py-2.5 text-sm text-black placeholder-gray-400"
+                  required={form.role === "PARENT"}
+                />)}
+                {(form.role === "PARENT") && (
+                <input
+                  placeholder="Last Name"
+                  value={form.lastName}
+                  onChange={(e) =>
+                    setForm({ ...form, lastName: e.target.value })
+                  }
+                  className="mt-3 w-full rounded-lg bg-white px-4 py-2.5 text-sm text-black placeholder-gray-400"
+                  required={form.role === "PARENT"}
                 />)}
                 <input
                   type="password"
@@ -121,6 +148,12 @@ export default function LoginPage() {
                   className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black hover:opacity-80"
                 >
                   Activate Account
+                </button>
+                <button
+                  onClick={() => router.push("/login")}
+                  className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black hover:opacity-80"
+                >
+                  Return to login
                 </button>
               </form>
 

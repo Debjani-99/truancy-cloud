@@ -43,9 +43,13 @@ export async function POST(req: Request) {
 
     await prisma.user.update({
         where: { email: session.user.email },
-        data: { passwordHash: newHash }
+        data: { 
+            passwordHash: newHash,
+            firstTimeUser: false,
+            needsPasswordReset: false,
+         }
     })
 
-    return NextResponse.json({ redirect: "/dashboard?passwordUpdated=1" });
+     return NextResponse.json({ redirect: "/login?passwordUpdated=1" });
 
 }

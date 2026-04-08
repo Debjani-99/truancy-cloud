@@ -32,6 +32,7 @@ model User {
   createdAt    DateTime @default(now())
 
   firstTimeUser Boolean @default(true)
+  needsPasswordReset  Boolean @default(false)
 
   studentId Int?      @unique
   student   Student?  @relation(fields: [studentId], references: [id], onDelete: SetNull)

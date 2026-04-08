@@ -107,6 +107,12 @@ export default function LoginPage() {
               >
                   Forgot Password
               </button>
+              <button
+                  onClick={() => router.push("settings/account-setup")}
+                  className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black hover:opacity-80"
+              >
+                  Activate Account
+              </button>
 
               <div className="mt-4 text-s text-black/90">
                 Having trouble? Contact your county administrator.

@@ -40,6 +40,7 @@ export const authOptions: NextAuthOptions = {
             schoolId: true,
             studentId: true,
             firstTimeUser: true,
+            needsPasswordReset: true
           },
         });
 
@@ -60,6 +61,7 @@ export const authOptions: NextAuthOptions = {
           name: `${user.firstName} ${user.lastName}`.trim(),
           studentId: user.studentId,
           firstTimeUser: user.firstTimeUser,
+          needsPasswordReset: user.needsPasswordReset,
         };
       },
     }),
@@ -78,6 +80,7 @@ export const authOptions: NextAuthOptions = {
       token.name = `${user.firstName} ${user.lastName}`;
       token.studentId = user.studentId ?? null;
       token.firstTimeUser = user.firstTimeUser;
+      token.needsPasswordReset = user.needsPasswordReset;
     }
     return token;
   },
@@ -95,6 +98,7 @@ export const authOptions: NextAuthOptions = {
     session.user.name = token.name;
     session.user.studentId = token.studentId;
     session.user.firstTimeUser = token.firstTimeUser;
+    session.user.needsPasswordReset = token.needsPasswordReset;
 
     return session;
   },

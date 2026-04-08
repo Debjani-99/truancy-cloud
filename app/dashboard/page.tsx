@@ -94,6 +94,14 @@ export default function DashboardPage() {
     }
   }, [status, session, router]);
 
+  // Redirect users who have reset passwords
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    if (session?.user?.needsPasswordReset === true) {
+       router.replace("/settings/change-password");
+    }
+  }, [status, session, router]);
+
  
 
   // Load county/school name
