@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Footer() {
   return (
     <footer className="relative z-10 mt-10 bg-black/60 backdrop-blur-md text-white">
@@ -10,8 +12,15 @@ export default function Footer() {
               Resources
             </h3>
             <ul className="space-y-2 text-sm text-white/70">
-              <li className="hover:text-white cursor-pointer">
-                Help Guides
+              <li>
+                <Link
+                  href="/docs/Resource-Guide.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="cursor-pointer hover:text-white hover:underline"
+                >
+                  Resource Guide
+                </Link>
               </li>
             </ul>
           </div>
@@ -21,13 +30,27 @@ export default function Footer() {
               Legal
             </h3>
             <ul className="space-y-2 text-sm text-white/70">
-              <li className="hover:text-white cursor-pointer">
-                Privacy Policy
+              <li>
+                <Link
+                href="/docs/privacy-policy.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="cursor-pointer hover:text-white hover:underline"
+                >
+                  Privacy Policy
+                </Link>
               </li>
-              <li className="hover:text-white cursor-pointer">
-                Terms & Conditions
+              <li>
+                <Link
+                href="/docs/terms.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="cursor-pointer hover:text-white hover:underline"
+                >
+                  Terms & Conditions
+                </Link>
               </li>
-              <li className="hover:text-white cursor-pointer">
+              <li className="hover:text-white cursor-pointer hover:underline">
                 Data Retention Policy
               </li>
             </ul>
@@ -38,7 +61,16 @@ export default function Footer() {
               Company
             </h3>
             <ul className="space-y-2 text-sm text-white/70">
-              <li className="hover:text-white cursor-pointer">About</li>
+              <li>
+                <Link
+                href="/docs/about.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="cursor-pointer hover:text-white hover:underline"
+                >
+                  About Us
+                </Link>
+              </li>
             </ul>
           </div>
 
