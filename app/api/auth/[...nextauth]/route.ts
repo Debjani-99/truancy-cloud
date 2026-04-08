@@ -38,6 +38,9 @@ export const authOptions: NextAuthOptions = {
             role: true,
             countyId: true,
             schoolId: true,
+            studentId: true,
+            firstTimeUser: true,
+            needsPasswordReset: true
           },
         });
 
@@ -56,6 +59,9 @@ export const authOptions: NextAuthOptions = {
           schoolId: user.schoolId,
           // Optional convenience for components that use session.user.name
           name: `${user.firstName} ${user.lastName}`.trim(),
+          studentId: user.studentId,
+          firstTimeUser: user.firstTimeUser,
+          needsPasswordReset: user.needsPasswordReset,
         };
       },
     }),
@@ -72,6 +78,9 @@ export const authOptions: NextAuthOptions = {
       token.countyId = user.countyId ?? null;
       token.schoolId = user.schoolId ?? null;
       token.name = `${user.firstName} ${user.lastName}`;
+      token.studentId = user.studentId ?? null;
+      token.firstTimeUser = user.firstTimeUser;
+      token.needsPasswordReset = user.needsPasswordReset;
     }
     return token;
   },
@@ -87,6 +96,9 @@ export const authOptions: NextAuthOptions = {
     session.user.countyId = token.countyId ?? null;
     session.user.schoolId = token.schoolId ?? null;
     session.user.name = token.name;
+    session.user.studentId = token.studentId;
+    session.user.firstTimeUser = token.firstTimeUser;
+    session.user.needsPasswordReset = token.needsPasswordReset;
 
     return session;
   },

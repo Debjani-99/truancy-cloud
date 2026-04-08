@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
@@ -13,18 +14,21 @@ export async function POST(req: Request) {
  
   const session = await getServerSession(authOptions);
 
-  let email = session?.user?.email || null;
+  let body: { email?: string } = {};
+  try {
+    body = await req.json();
+  } catch {
+
+  }
+  const email = body?.email?.toLowerCase().trim() || session?.user?.email;
 
   if (!email) {
-    const body = await req.json();
-    email = body?.email?.toLowerCase().trim();
-
-    if (!email){
-      return Response.json( 
-        { error: "Email is required" },
-        { status: 400 }
-      );
-    }
+    
+    return NextResponse.json( 
+      { error: "Email is required" },
+      { status: 400 }
+    );
+    
   }
 
   const user = await prisma.user.findUnique({
@@ -33,7 +37,7 @@ export async function POST(req: Request) {
   });
 
   if (!user) {
-    return Response.json(
+    return NextResponse.json(
       { error: "No user exists with that email" },
       { status: 400 }
     )
@@ -44,7 +48,10 @@ export async function POST(req: Request) {
 
   await prisma.user.update({
     where: { id: user.id},
-    data: { passwordHash: hashed}
+    data: { 
+      passwordHash: hashed,
+      needsPasswordReset: true,
+    }
   });
   
   try {
@@ -62,9 +69,9 @@ export async function POST(req: Request) {
       `,
     });
 
-    return Response.json({ success: true });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);
-    return Response.json({ error: "Failed to send email" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to send email" }, { status: 500 });
   }
 }

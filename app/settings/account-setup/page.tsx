@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import Footer from "@/app/components/Footer";
 
 export default function LoginPage() {
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState(
+    { role: "", email: "", studentId: "", firstName: "", lastName: "", password: "" });
   const [error, setError] = useState("");
   const router = useRouter();
 
@@ -14,17 +15,24 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
 
-    const res = await signIn("credentials", {
-      email: form.email,
-      password: form.password,
-      redirect: false,
+    const res = await fetch("/api/activate-account", {
+      method: "POST",
+      headers: { "Content-Type": "application/json"},
+      body: JSON.stringify(form),
     });
 
-    if (res?.error) {
-      setError("Invalid email or password");
-    } else {
-      window.location.href = "/dashboard";
-    }
+    const data = await res.json();
+
+    if (!res.ok) {
+      setError(data.error || "Account activation failed");
+      return;
+    } 
+
+    await signIn("credentials", {
+      email: form.email,
+      password: form.password,
+      callbackUrl: "/settings/change-password"
+    })
   }
 
   return (
@@ -62,7 +70,7 @@ export default function LoginPage() {
           {/* Login card */}
           <div className="flex items-center justify-center">
             <div className="w-full max-w-md rounded-2xl bg-white/30 p-6 text-center backdrop-blur-md ring-1 ring-white/15 shadow-2xl">
-              <h2 className="text-2xl font-semibold text-black/85">Sign in</h2>
+              <h2 className="text-2xl font-semibold text-black/85">Activate Account</h2>
 
               <p className="mt-2 text-m text-black/85">
                 Authorized county account required
@@ -73,6 +81,17 @@ export default function LoginPage() {
               )}
 
               <form onSubmit={handleSubmit}>
+                <select                       
+                    className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm text-black placeholder-gray-400"
+                    value={form.role}
+                    onChange={(e) => setForm({ ...form, role: e.target.value})}
+                    required
+                >
+                  <option value="">Select a role</option>
+                  <option value="COURT">Court</option>
+                  <option value="SCHOOL">School</option>
+                  <option value="PARENT">Parent</option>
+                </select>
                 <input
                   type="email"
                   placeholder="Email"
@@ -83,6 +102,36 @@ export default function LoginPage() {
                   className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm text-black placeholder-gray-400"
                   required
                 />
+                {(form.role === "PARENT") && (
+                <input
+                  placeholder="Student ID"
+                  value={form.studentId}
+                  onChange={(e) =>
+                    setForm({ ...form, studentId: e.target.value })
+                  }
+                  className="mt-3 w-full rounded-lg bg-white px-4 py-2.5 text-sm text-black placeholder-gray-400"
+                  required={form.role === "PARENT"}
+                />)}
+                {(form.role === "PARENT") && (
+                <input
+                  placeholder="First Name"
+                  value={form.firstName}
+                  onChange={(e) =>
+                    setForm({ ...form, firstName: e.target.value })
+                  }
+                  className="mt-3 w-full rounded-lg bg-white px-4 py-2.5 text-sm text-black placeholder-gray-400"
+                  required={form.role === "PARENT"}
+                />)}
+                {(form.role === "PARENT") && (
+                <input
+                  placeholder="Last Name"
+                  value={form.lastName}
+                  onChange={(e) =>
+                    setForm({ ...form, lastName: e.target.value })
+                  }
+                  className="mt-3 w-full rounded-lg bg-white px-4 py-2.5 text-sm text-black placeholder-gray-400"
+                  required={form.role === "PARENT"}
+                />)}
                 <input
                   type="password"
                   placeholder="Password"
@@ -98,21 +147,15 @@ export default function LoginPage() {
                   type="submit"
                   className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black hover:opacity-80"
                 >
-                  Sign In
+                  Activate Account
+                </button>
+                <button
+                  onClick={() => router.push("/login")}
+                  className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black hover:opacity-80"
+                >
+                  Return to login
                 </button>
               </form>
-              <button
-                  onClick={() => router.push("settings/forgot-password")}
-                  className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black hover:opacity-80"
-              >
-                  Forgot Password
-              </button>
-              <button
-                  onClick={() => router.push("settings/account-setup")}
-                  className="mt-6 w-full rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-black hover:opacity-80"
-              >
-                  Activate Account
-              </button>
 
               <div className="mt-4 text-s text-black/90">
                 Having trouble? Contact your county administrator.
