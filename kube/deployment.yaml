@@ -29,6 +29,14 @@ spec:
               value: "https://truancy-cloud-demo.nrp-nautilus.io"
             - name: UPLOAD_DIR
               value: "/tmp/uploads"
+            - name: S3_ENDPOINT
+              value: "https://s3-west.nrp-nautilus.io"
+            - name: S3_BUCKET
+              value: "secondbell-uploads"
+            - name: S3_ACCESS_KEY
+              value: "GIU1047JI72ZZ1ORFMK7"
+            - name: S3_SECRET_KEY
+              value: "1ULzKDC3pv3yc6luT9S32arOBqny0dj4oCZhyvSQ"
           resources:
             requests:
               cpu: "250m"
