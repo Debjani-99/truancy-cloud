@@ -121,7 +121,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-<div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center animate-bounce">
+<div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center">
   <div className="rounded-full bg-white/20 px-4 py-2 backdrop-blur-md shadow-md">
     <span className="text-xs font-semibold tracking-widest text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]">
       SCROLL
