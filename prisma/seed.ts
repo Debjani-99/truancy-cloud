@@ -162,7 +162,7 @@ async function main() {
   where: {
     // composite unique constraint
     schoolId_studentRef: {
-      schoolId: urbana.id,
+      schoolId: springfield.id,
       studentRef: "118678",
     },
   },
