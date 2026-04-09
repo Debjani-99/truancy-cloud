@@ -1,311 +1,278 @@
-Truancy Cloud is a Next.js (App Router) full-stack web application designed to securely manage truancy-related data for schools and courts.
+# Second Bell — Truancy Cloud
 
-The project supports role-based access, secure authentication, and scalable cloud deployment.
-The system allows:
-- Schools to upload attendance reports (PDFs)
-- Courts to process and analyze attendance data
-- Role-based access to ensure secure and scoped data visibility
+**Second Bell** is a full-stack web application built for the Champaign County Juvenile Court (Supreme Court of Ohio) to manage school truancy data, assess student risk, and generate formal court notice letters.
 
-The project is also set up to be containerized with Docker and deployed to NRP (using Kubernetes).
-
-- **Note:** Deployment is handled separately using Docker/Kubernetes.
+Schools upload attendance reports. Court users process them, review per-student risk levels, and download PDF truancy notice letters. All data access is scoped by role — courts see only their county, schools see only their own data.
 
 ---
 
-## Current Implementation Status
+## Table of Contents
 
-### Fully Implemented
-
-- Per-student dashboard (detail page)
-  - Displays student identity and latest attendance snapshot
-  - Shows absence percentage and current risk status
-
-- Attendance metrics
-  - Total absence hours
-  - Truancy (absence) percentage calculation
-
-- Attendance history table
-  - Displays multiple uploaded snapshots per student
-  - Shows changes across reports
-
-- Basic trend visualization
-  - Line chart of absence % over time
-  - Threshold indicators (5%, 7%, 10%)
-
-- Filtering and review workflows
-  - Courts can filter students by risk level
-  - School-scoped and county-scoped access enforced via RBAC
-
-- Role-based dashboards
-  - Admin: full system access
-  - Court: county-level access
-  - School: upload + limited visibility
-
-- Court workflow actions
-  - Courts can review flagged students
-  - Courts can generate truancy letters
+1. [Tech Stack](#tech-stack)
+2. [Architecture Overview](#architecture-overview)
+3. [Data Model](#data-model)
+4. [RBAC System](#rbac-system)
+5. [End-to-End Workflow](#end-to-end-workflow)
+6. [API Reference](#api-reference)
+7. [Local Development Setup](#local-development-setup)
+8. [Environment Variables](#environment-variables)
+9. [Running Tests](#running-tests)
+10. [Deployment (Kubernetes / NRP)](#deployment-kubernetes--nrp)
+11. [Demo Access](#demo-access)
+12. [Common Issues](#common-issues)
 
 ---
-
-### Partially Implemented / Demo-Ready
-
-- Trend analysis
-  - Based on uploaded snapshots (not full time-series engine)
-  - Limited to available reports
-
-- Student filtering
-  - Basic filtering by thresholds implemented
-  - Advanced filtering (multi-dimensional) not yet complete
-
-- Truancy letter generation
-  - Generates draft letter with student data
-  - Includes placeholders for manual completion
-  - Preview/edit workflow still evolving
-
-- OTP / parent access system
-  - Concept implemented in flow design
-  - Partial backend/frontend integration
-
-- QR code integration
-  - Planned in workflow
-  - Not fully wired into final system
-
----
-
-### Not Yet Fully Implemented
-
-- Full workflow state engine (case lifecycle tracking)
-  - No persistent state machine for cases yet
-
-- Advanced analytics / predictions
-  - No ML or predictive modeling yet
-
-- True historical time-series tracking
-  - System uses snapshot-based history (not continuous tracking)
-
-- Cross-county analytics dashboards (advanced)
-  - Admin visibility exists
-  - Deep analytics still limited
-
-- Performance optimizations at scale
-  - Basic functionality works
-  - Large-scale optimization not yet addressed
-
----
-
-## Demo Access
-
-Public demo URL:
-https://truancy-cloud-demo.nrp-nautilus.io
-
-Seeded demo accounts:
-
-The following accounts are available for testing different roles within the system:
-
-| Role   | Email             | Password     |
-|--------|------------------|--------------|
-| Admin  | admin@secondbell.dev   | password123  |
-| Court  | champaign_court@secondbell.dev | password123  |
-| Court  | clark_court@secondbell.dev | password123  |
-| School | urbana_school@secondbell.dev  | password123  |
-| School | graham_school@secondbell.dev | password123  |
-| School | springfield_school@secondbell.dev | password123  |
-
-> These accounts are created using the seed script and are intended for development and demo purposes only.
-
----
-
-## Important NRP Note
-NRP resources may expire after about 2 weeks of inactivity or according to cluster cleanup rules.
-If the pods or deployment disappear, redeploy using the Kubernetes manifests and reseed the database.
-
-## Redeploy Steps
-1. Apply namespace/resources if needed
-2. Deploy Postgres
-3. Deploy Postgres service
-4. Deploy web app
-5. Deploy web service
-6. Deploy ingress
-7. Run Prisma migrations against the Kubernetes Postgres database
-8. Seed the database
-9. Restart the web deployment
-
-## Example Commands
-
-### Deploy infrastructure
-```bash
-kubectl -n truancy-cloud apply -f kube/postgres-pvc.yaml
-kubectl -n truancy-cloud apply -f kube/postgres-deployment.yaml
-kubectl -n truancy-cloud apply -f kube/postgres-service.yaml
-kubectl -n truancy-cloud apply -f kube/deployment.yaml
-kubectl -n truancy-cloud apply -f kube/service.yaml
-kubectl -n truancy-cloud apply -f kube/ingress.yaml
-```
----
-## Kubernetes Web Deployment Environment Variables
-
-The `truancy-web` deployment must include these environment variables:
-
-- `NODE_ENV=production`
-- `DATABASE_URL=postgresql://postgres:truancyCloud@truancy-postgres-svc:5432/mydb?schema=public`
-- `NEXTAUTH_SECRET=<long random secret>`
-- `NEXTAUTH_URL=https://truancy-cloud-demo.nrp-nautilus.io`
-
-Without `NEXTAUTH_SECRET`, login will fail in production.
-Without the Kubernetes `DATABASE_URL`, the web pod will not connect to the cluster Postgres service correctly.
-
----
-
-## Seeding the Kubernetes Database
-
-To seed the NRP database from your local machine:
-
-1. Port-forward the Postgres service:
-   kubectl -n truancy-cloud port-forward svc/truancy-postgres-svc 5433:5432
-
-2. In a new terminal:
-   export DATABASE_URL="postgresql://postgres:truancyCloud@127.0.0.1:5433/mydb?schema=public"
-
-3. Run:
-   npx prisma migrate deploy
-   npx prisma db seed
-
-4. Restart the web deployment:
-   kubectl -n truancy-cloud rollout restart deployment truancy-web
-
-> Port-forwarding is only needed while running local Prisma commands against the cluster DB. It can be closed afterward.
----
-
-## When do I need to reseed?
-
-You do NOT need to reseed if:
-- the public URL is already working
-- the database PVC still exists
-- the seeded demo users can log in
-
-You DO need to reseed if:
-- the environment is redeployed from scratch
-- the Postgres PVC is deleted
-- the cluster database is empty
-
----
-
-## Post-Deploy Verification Checklist
-
-- `kubectl -n truancy-cloud get pods` shows Postgres and web pods as `Running`
-- `kubectl -n truancy-cloud get svc` shows `truancy-postgres-svc` and `truancy-web-svc`
-- `kubectl -n truancy-cloud get ingress` shows `truancy-web-ingress`
-- Public URL loads: `https://truancy-cloud-demo.nrp-nautilus.io`
-- Demo login works:
-  - `admin@secondbell.dev`
-  - `password123`
-- Courts and schools can access their scoped views
-- School user can upload a PDF
-- Court user can process a report
-
----
-
-## Core Features
-
-- Secure login using email + password
-- Role-based access control (ADMIN, COURT, SCHOOL)
-- Session includes role and scope (county/school)
-- County-scoped data access for court users
-- Server-side route protection for authenticated pages
-- Multi-tenant architecture with county- and school-scoped access
-- PDF upload validation (type + size + structure)
-- Attendance PDF parsing (ProgressBook format)
-- Data normalization and ingestion into database
-- Student-level attendance aggregation
-- Truancy % calculation and risk classification
-- Court review dashboard with:
-  - Filtering (risk level)
-  - Sorting (truancy %, name)
-- Upload status tracking (PENDING, PROCESSING, PARSED, FAILED)
-
----
-
-## System Flow (End-to-End)
-
-1. School uploads attendance PDF
-2. File is validated (type, size, structure)
-3. File is stored in Ceph S3
-4. Upload record is created (status = PENDING)
-5. Court user triggers processing
-6. PDF is parsed into structured data
-7. Data is normalized and validated
-8. Student records are created/updated in database
-9. Attendance records are stored (year-to-date snapshot)
-10. Truancy % is calculated
-11. Results are displayed in the review dashboard
-
-----
 
 ## Tech Stack
 
-- **Frontend & Backend**
-  - Next.js (App Router)
-  - TypeScript
-  - Tailwind CSS (UI styling)
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16.1.4 (App Router) |
+| Language | TypeScript |
+| Styling | Tailwind CSS v4 (`@tailwindcss/postcss`) |
+| Auth | NextAuth v4 — JWT sessions, Credentials provider |
+| ORM | Prisma 7 with `@prisma/adapter-pg` |
+| Database | PostgreSQL 15 |
+| File Storage | Ceph S3 (NRP Nautilus) via `@aws-sdk/client-s3` |
+| PDF Parsing | `pdf-parse` (ProgressBook format) |
+| PDF Generation | `@react-pdf/renderer` |
+| UI Components | CVA + Radix Slot + Tailwind (shadcn-style, manual — shadcn CLI incompatible with Tailwind v4) |
+| Email | Resend |
+| Tests | Vitest |
+| Deployment | Docker + Kubernetes (NRP Nautilus cluster) |
 
-- **Authentication & Authorization**
-  - Auth.js / NextAuth
-  - Credential-based login (email + password)
-  - Role-based access (RBAC)
-  - JWT-based sessions
-  - Session scoping:
-    - countyId for COURT users
-    - schoolId for SCHOOL users
-
-- **Database**
-  - PostgreSQL
-  - Prisma ORM
-  - Seed scripts for initial users
-
-- **File storage**
-  - NRP Ceph S3 (S3-compatible object storage)
-
-- **PDF processing**
-  - pdf-parse (structured extraction)
-
-- **Deployment**
-  - Docker (containerization)
-  - Kubernetes (NRP / Nautilus cluster)
- 
----
-
-## System Requirements
-
-Before running the project, make sure you have the following installed:
-
-- **Node.js (v18 or higher recommended)**
-
-- **npm (v9 or higher)**
-
-- **Docker (for containerization and DB)**
-
-- **kubectl (for Kubernetes deployment to NRP)**
+> **Tailwind v4 note:** This project uses Tailwind v4 (`@tailwindcss/postcss`), which has no `tailwind.config.js`. The shadcn CLI is incompatible with v4 — UI components in `app/components/ui/` were installed manually.
 
 ---
 
-## Database (Docker-Based PostgreSQL)
+## Architecture Overview
 
-This project runs PostgreSQL using Docker instead of a locally installed PostgreSQL instance.
+```
+Browser
+  │
+  ├── Next.js App Router (SSR + Client Components)
+  │     ├── /login              → Credentials auth via NextAuth
+  │     ├── /dashboard          → Role-based landing
+  │     ├── /upload             → School PDF upload
+  │     ├── /review             → Court review queue (uploads list)
+  │     ├── /review/results     → Per-upload parsed student results
+  │     ├── /students           → Student list with risk filtering
+  │     ├── /students/[id]      → Student detail: trend, notes, risk
+  │     ├── /students/[id]/notes→ Court internal notes
+  │     ├── /admin/courts       → Admin: county management
+  │     ├── /admin/schools      → Admin: school management
+  │     └── /settings/          → Change / forgot password
+  │
+  └── API Routes (/app/api/)
+        ├── /auth/[...nextauth] → NextAuth session
+        ├── /uploads            → POST: upload PDF to S3
+        ├── /uploads/[id]/process → POST: trigger PDF parsing
+        ├── /uploads/[id]/results → GET: parsed student results
+        ├── /students           → GET: student list with risk flags
+        ├── /students/[id]      → GET: student detail + attendance
+        ├── /students/[id]/notice → GET: stream PDF truancy letter
+        ├── /students/[id]/notes → GET/POST/DELETE: court notes
+        ├── /counties           → GET: county list (admin)
+        ├── /counties/[id]/schools → GET: schools in county
+        ├── /schools/[id]       → GET: school detail
+        ├── /send-email         → POST: send OTP / password reset
+        └── /update-password    → POST: change password
 
-**Required**
-
-- Docker Desktop installed and running
-
-Check Docker:
-
-```bash
-docker --version
-docker ps
+External Services
+  ├── Ceph S3 (NRP)   — PDF file storage
+  ├── PostgreSQL       — all relational data
+  └── Resend           — transactional email
 ```
 
+### Key architectural patterns
+
+- **`requireAuth(roles)`** (`lib/auth.ts`) — called at the top of every server component and API route. Returns the session or redirects. All data queries are scoped to `session.countyId` or `session.schoolId` depending on role.
+- **Snapshot data model** — each upload is a year-to-date snapshot. Re-uploading a newer export for the same school year updates `AttendanceRecord` in place. `AttendanceHistory` preserves a row per upload for trend charting.
+- **PDF generation is server-only** — `@react-pdf/renderer` runs with `export const runtime = "nodejs"` and streams the buffer directly as `Content-Type: application/pdf`.
+
 ---
 
-## Start PostgreSQL Container
+## Data Model
+
+```
+County
+  └── School (many)
+        ├── User[] (role=SCHOOL)
+        ├── Upload[]
+        │     └── AttendanceReport
+        │           ├── AttendanceRecord[] (current YTD snapshot per student)
+        │           └── AttendanceHistory[] (one row per upload, for trend)
+        └── Student[]
+              ├── AttendanceRecord[] (current)
+              ├── AttendanceHistory[] (trend)
+              ├── StudentNote[] (court internal notes)
+              └── User? (future: parent portal account link)
+
+User
+  ├── role: ADMIN | COURT | SCHOOL | PARENT
+  ├── countyId? (COURT users)
+  ├── schoolId? (SCHOOL users)
+  └── studentId? (PARENT users — future)
+```
+
+### Risk classification
+
+Computed from `unexcusedHours / totalAbsHours` on each `AttendanceRecord`:
+
+| Label | Threshold |
+|---|---|
+| Normal | < 5% |
+| At Watch | ≥ 5% |
+| Court Warning | ≥ 7% |
+| At Risk | ≥ 10% |
+
+---
+
+## RBAC System
+
+All access is enforced at three layers: UI, API route, and database query.
+
+| Role | Scope | Can do |
+|---|---|---|
+| `ADMIN` | All counties + schools | Full read/write, user management |
+| `COURT` | Own `countyId` only | Process uploads, view students, generate PDF notices |
+| `SCHOOL` | Own `schoolId` only | Upload PDFs, view own students (no letter generation) |
+| `PARENT` | Own `studentId` only | View own student (future — not yet wired) |
+
+Session payload (JWT):
+```ts
+{
+  id: string
+  email: string
+  firstName: string
+  lastName: string
+  role: "ADMIN" | "COURT" | "SCHOOL" | "PARENT"
+  countyId?: string   // COURT users
+  schoolId?: string   // SCHOOL users
+}
+```
+
+Use `requireAuth(["COURT", "ADMIN"])` in server components and API routes to enforce access.
+
+---
+
+## End-to-End Workflow
+
+### 1. School uploads an attendance PDF
+
+- School user navigates to `/upload`
+- Selects a ProgressBook-format PDF attendance export
+- `POST /api/uploads`: validates file type/size, uploads to Ceph S3, creates `Upload` record with `status = PENDING`
+
+### 2. Court processes the upload
+
+- Court user navigates to `/review` — sees all uploads for their county
+- Clicks **Process** on a pending upload
+- `POST /api/uploads/[id]/process`:
+  - Fetches PDF from S3
+  - Parses with `lib/attendance/extract.ts` (pattern-based, ProgressBook format)
+  - Normalizes with `lib/attendance/normalize.ts`
+  - Ingests with `lib/attendance/ingest.ts`:
+    - Upserts `Student` records
+    - Upserts `AttendanceRecord` (current YTD snapshot)
+    - Appends `AttendanceHistory` row (for trend)
+    - Creates `AttendanceReport`
+  - Sets `Upload.status = PARSED` (or `FAILED` on error)
+
+### 3. Court reviews results
+
+- Clicks **Results** on a PARSED upload → `/review/results?uploadId=...`
+- Table shows all students from that upload with risk badges
+- Filter by threshold (5% / 7% / 8% / 10%+) or view all
+- Click **Detail** to open student detail page
+
+### 4. Student detail page
+
+`/students/[id]` — full per-student dashboard:
+- Identity card (name, school, risk badge)
+- Info cards (school year, latest report date, snapshot count)
+- **Absence Trend** chart — line graph of unexcused % across all uploaded snapshots
+- **Review Summary** — recent change delta + rule-based risk message
+- **Court Notes** — internal notes for court follow-up (COURT/ADMIN only in practice)
+- **Attendance History** table — all snapshots
+
+### 5. Generate PDF truancy notice
+
+- Court/Admin user on student detail page clicks **Generate Letter**
+- Browser navigates to `GET /api/students/[id]/notice`
+- Server builds `LetterData` from student + school + county + attendance records
+- Renders `TruancyNoticePdf` React PDF document via `@react-pdf/renderer`
+- Streams PDF buffer as download with `Content-Disposition: attachment`
+- PDF includes: court header, formal letter body (law student language), attendance summary table, parent portal instructions section
+
+### 6. Student list (alternate entry point)
+
+- Dashboard "View Students" button → `/students?schoolId=...`
+- Filterable by risk status and name search
+- Same **Detail** link navigates to student detail
+
+---
+
+## API Reference
+
+### Authentication
+
+All routes check the session. `requireAuth(roles)` in `lib/auth.ts` returns the session or throws a redirect.
+
+### Uploads
+
+| Method | Route | Role | Description |
+|---|---|---|---|
+| `POST` | `/api/uploads` | SCHOOL | Upload PDF to S3, create Upload record |
+| `GET` | `/api/uploads` | COURT, ADMIN | List uploads scoped to county/all |
+| `POST` | `/api/uploads/[id]/process` | COURT, ADMIN | Trigger PDF parse + ingest |
+| `GET` | `/api/uploads/[id]/results` | COURT, ADMIN | Return parsed student results for upload |
+
+### Students
+
+| Method | Route | Role | Description |
+|---|---|---|---|
+| `GET` | `/api/students` | ALL | List students with computed risk flags |
+| `GET` | `/api/students/[id]` | ALL | Student detail with all attendance records |
+| `GET` | `/api/students/[id]/notice` | COURT, ADMIN | Stream PDF truancy notice letter |
+| `GET` | `/api/students/[id]/notes` | COURT, ADMIN | List court notes for student |
+| `POST` | `/api/students/[id]/notes` | COURT, ADMIN | Create court note |
+| `DELETE` | `/api/students/[id]/notes` | COURT, ADMIN | Delete court note |
+
+### Admin / Structure
+
+| Method | Route | Role | Description |
+|---|---|---|---|
+| `GET` | `/api/counties` | ADMIN | List all counties |
+| `GET` | `/api/counties/[id]/schools` | ADMIN, COURT | List schools in county |
+| `GET` | `/api/schools/[id]` | ADMIN, COURT, SCHOOL | School detail |
+
+### Account
+
+| Method | Route | Role | Description |
+|---|---|---|---|
+| `POST` | `/api/update-password` | ALL | Change password |
+| `POST` | `/api/send-email` | Public | Send password reset OTP |
+
+---
+
+## Local Development Setup
+
+### Prerequisites
+
+- Node.js v18+
+- npm v9+
+- Docker Desktop (for local PostgreSQL)
+
+### 1. Clone and install
+
+```bash
+git clone <repo-url>
+cd truancy-cloud
+npm install
+```
+
+### 2. Start a local PostgreSQL container
 
 ```bash
 docker run --name truancy-postgres \
@@ -315,431 +282,280 @@ docker run --name truancy-postgres \
   -p 5433:5432 \
   -d postgres:15
 ```
+
+### 3. Configure environment variables
+
+Create `.env` in the project root:
+
+```bash
+DATABASE_URL=postgresql://postgres:truancycloud@127.0.0.1:5433/mydb?schema=public
+NEXTAUTH_SECRET=any-random-string-at-least-32-chars
+NEXTAUTH_URL=http://localhost:3000
+
+# Optional: required for PDF upload flow
+S3_ENDPOINT=https://s3-west.nrp-nautilus.io
+S3_REGION=us-west-1
+S3_BUCKET=truancy-cloud
+S3_ACCESS_KEY=<your-key>
+S3_SECRET_KEY=<your-secret>
+```
+
+> Without S3 credentials, uploads will fail. Everything else (student detail, PDF generation, notes) works locally without S3 if you seed or manually insert data.
+
+### 4. Run migrations and seed
+
+```bash
+npx prisma migrate deploy
+npx prisma db seed
+```
+
+The seed creates:
+- Counties: Champaign, Clark
+- Schools: Urbana High, Graham High, Springfield High
+- Demo users (see [Demo Access](#demo-access))
+
+> **Demo data note:** The seed does not create student or attendance records. To test the full flow, either upload and process a ProgressBook-format PDF, or manually insert records via `prisma studio` (`npx prisma studio`).
+
+### 5. Generate the Prisma client
+
+```bash
+npx prisma generate
+```
+
+Run this any time `prisma/schema.prisma` changes.
+
+### 6. Start the dev server
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
 ---
 
-## Cloud Storage (Ceph / S3) Setup
+## Environment Variables
 
-Uploads are stored in Ceph S3-compatible storage.
+| Variable | Required | Description |
+|---|---|---|
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `NEXTAUTH_SECRET` | Yes | Random secret for JWT signing (min 32 chars) |
+| `NEXTAUTH_URL` | Yes | Base URL of the app (e.g. `http://localhost:3000`) |
+| `S3_ENDPOINT` | For uploads | Ceph S3 endpoint URL |
+| `S3_REGION` | For uploads | S3 region |
+| `S3_BUCKET` | For uploads | S3 bucket name |
+| `S3_ACCESS_KEY` | For uploads | S3 access key |
+| `S3_SECRET_KEY` | For uploads | S3 secret key |
 
-The following environment variables must be set for uploads to work:
+---
 
-- S3_ENDPOINT
-- S3_REGION
-- S3_BUCKET
-- S3_ACCESS_KEY
-- S3_SECRET_KEY
+## Running Tests
 
-If these are not provided, the app may fall back to local storage (if implemented), or uploads may fail.
+```bash
+npm run test
+```
 
-Example:
+Tests run with Vitest. The suite covers:
 
-S3_ENDPOINT=https://s3-west.nrp-nautilus.io  
-S3_REGION=us-west-1  
-S3_BUCKET=truancy-cloud  
-S3_ACCESS_KEY=<your-key>  
-S3_SECRET_KEY=<your-secret>
+| File | What it tests |
+|---|---|
+| `tests/attendance.extract.test.ts` | PDF extraction logic |
+| `tests/attendance.ingest.test.ts` | Data normalization + DB upsert logic |
+| `tests/api.uploads.post.test.ts` | Upload API validation, S3 error handling |
+| `tests/api.uploads.get.*.test.ts` | Upload list RBAC (court, school, admin) |
+| `tests/api.schools.id.rbac.test.ts` | School detail RBAC |
+| `tests/api.counties.schools.rbac.test.ts` | County → schools RBAC |
+| `tests/api.upload-id.test.ts` | Upload-by-ID access |
+| `tests/students.id.rbac.test.ts` | Student detail RBAC (court county scope, school scope) |
+| `tests/sanity.test.ts` | Basic sanity check |
+
+All API tests mock Prisma and NextAuth — no database required to run the suite.
 
 ---
 
 ## Key Code Locations
 
-- Authentication:
-  /app/api/auth/[...nextauth]/route.ts
-
-- Prisma client setup:
-  /lib/prisma.ts
-
-- Database schema:
-  /prisma/schema.prisma
-
-- Seed script:
-  /prisma/seed.ts
-
-- PDF parsing logic:
-  /lib/attendance/parser.ts
-
-- Data ingestion logic:
-  /lib/attendance/ingest.ts
-
-- Student dashboard:
-  /app/students/[id]/page.tsx
-
-- Upload API:
-  /app/api/uploads/route.ts
-
-- Kubernetes configs:
-  /kube/
-
----
-
-## Authentication & Access Control Details
-
-- **When a user logs in, their session includes**:
-
-  - id
-  - email
-  - firstName
-  - lastName
-  - role
-  - countyId (COURT users)
-  - schoolId (SCHOOL users)
-
-- This session data is available via:
-  - useSession() (client)
-  - getServerSession() (server)
-  - /api/auth/session
-
-## Role Enforcement
-
-- Logged-out users are redirected to /login
-- Logged-in users with the wrong role are blocked from protected pages
-- Access is enforced at the page and API level, not just the UI
-
----
-
-## Key Design Decisions
-
-### Cumulative Data Model
-
-- Each upload represents a **year-to-date snapshot**
-- Prevents duplicate records
-- Simplifies data consistency
-- Tradeoff: no historical tracking yet
-
----
-
-### RBAC at Multiple Layers
-
-- Enforced at:
-  - UI level
-  - API level
-  - Database queries
-- Ensures strong data isolation between schools and counties
-
----
-
-### PDF Parsing Approach
-
-- Uses pattern-based parsing (pdf-parse)
-- Optimized for known format (ProgressBook)
-- Tradeoff: less flexible for unknown formats
+| Purpose | Path |
+|---|---|
+| NextAuth config | `app/api/auth/[...nextauth]/route.ts` |
+| Auth guard (requireAuth) | `lib/auth.ts` |
+| Prisma client | `lib/prisma.ts` |
+| Database schema | `prisma/schema.prisma` |
+| Seed script | `prisma/seed.ts` |
+| PDF extraction (parse) | `lib/attendance/extract.ts` |
+| Data normalization | `lib/attendance/normalize.ts` |
+| DB ingestion | `lib/attendance/ingest.ts` |
+| PDF letter template | `lib/pdf/letter-template.ts` |
+| PDF React document | `lib/pdf/TruancyNoticePdf.tsx` |
+| UI components | `app/components/ui/` |
+| Student list page | `app/students/page.tsx` |
+| Student detail page | `app/students/[id]/page.tsx` |
+| Review queue | `app/review/page.tsx` |
+| Results page | `app/review/results/page.tsx` |
+| Kubernetes configs | `kube/` |
 
 ---
 
 ## Project Folder Structure
 
-```bash
+```
 truancy-cloud/
-├── app/                    # Next.js App Router (pages, layouts, UI)
-│   ├── page.tsx           # Landing page
-│   ├── layout.tsx         # Global layout
-│   ├── globals.css        # Global styles
-│   └── session-wrapper.tsx# Auth provider (NextAuth)
-
-├── admin/                 # Admin-only views (manage courts, schools)
-├── dashboard/             # Role-based landing page after login
-├── upload/                # School upload UI
-├── review/                # Court/Admin review workspace
-
-├── api/                   # Backend API routes
-│   ├── auth/              # Authentication (NextAuth)
-│   ├── uploads/           # Upload handling + file retrieval
-│   ├── reports/           # PDF processing + ingestion
-│   ├── counties/          # County + school data (admin/court)
-│   ├── schools/           # School data endpoints
-│   └── court/             # Court-specific routes
-
-├── prisma/                # Database schema + migrations
-├── tests/                 # Automated tests (Vitest, RBAC)
-├── kube/                  # Kubernetes deployment configs
-
-├── .env                   # Environment variables (local)
-├── package.json           # Project dependencies
-├── README.md              # Project documentation
-
+├── app/
+│   ├── api/                    # All API routes
+│   │   ├── auth/               # NextAuth
+│   │   ├── uploads/            # Upload CRUD + process + results
+│   │   ├── students/           # Student list, detail, notice, notes
+│   │   ├── counties/           # County + school structure
+│   │   ├── schools/            # School detail
+│   │   ├── send-email/         # Resend transactional email
+│   │   └── update-password/    # Password change
+│   ├── components/
+│   │   └── ui/                 # Button, Badge, utils (manual shadcn-style)
+│   ├── admin/                  # Admin views (courts, schools)
+│   ├── dashboard/              # Role-based dashboard
+│   ├── help/                   # Contextual help pages
+│   ├── review/                 # Court review queue + results
+│   ├── settings/               # Change/forgot password
+│   ├── students/               # Student list + detail + notes
+│   └── upload/                 # School upload UI
+├── lib/
+│   ├── attendance/             # extract.ts, normalize.ts, ingest.ts, types.ts
+│   ├── pdf/                    # letter-template.ts, TruancyNoticePdf.tsx
+│   ├── auth.ts                 # requireAuth() guard
+│   └── prisma.ts               # Prisma singleton
+├── prisma/
+│   ├── schema.prisma
+│   ├── seed.ts
+│   └── migrations/
+├── tests/                      # Vitest test suite
+├── kube/                       # Kubernetes manifests
+├── types/                      # Shared TypeScript types
+└── public/                     # Static assets
 ```
-
-## Environment Variables
-
-Create a .env file in the project root.
-
-```bash
-DATABASE_URL=postgresql://postgres:truancycloud@127.0.0.1:5433/mydb?schema=public
-NEXTAUTH_SECRET=change-me-to-a-random-string
-NEXTAUTH_URL=http://localhost:3000
-```
-
-## Seed the Database
-
-Run the following commands to initialize the database and create demo data:
-
-```bash
-npx prisma db push
-npm run seed
-```
-
-### Seed Command
-
-To generate these accounts locally:
-
-```bash
-npm run seed
-```
----
-
-
-## Local Development Setup
-
-Follow these steps to run the project locally.
 
 ---
 
-### 1. Clone the repository
+## Deployment (Kubernetes / NRP)
+
+The app is deployed on the [NRP Nautilus](https://nationalresearchplatform.org/) cluster using Kubernetes.
+
+### Deploy infrastructure
 
 ```bash
-git clone <repo-url>
-cd truancy-cloud
+kubectl -n truancy-cloud apply -f kube/postgres-pvc.yaml
+kubectl -n truancy-cloud apply -f kube/postgres-deployment.yaml
+kubectl -n truancy-cloud apply -f kube/postgres-service.yaml
+kubectl -n truancy-cloud apply -f kube/deployment.yaml
+kubectl -n truancy-cloud apply -f kube/service.yaml
+kubectl -n truancy-cloud apply -f kube/ingress.yaml
 ```
 
-### 2. Install dependencies:
+### Required environment variables on the web deployment
+
+```
+NODE_ENV=production
+DATABASE_URL=postgresql://postgres:truancyCloud@truancy-postgres-svc:5432/mydb?schema=public
+NEXTAUTH_SECRET=<long random secret>
+NEXTAUTH_URL=https://truancy-cloud-demo.nrp-nautilus.io
+S3_ENDPOINT=...
+S3_REGION=...
+S3_BUCKET=...
+S3_ACCESS_KEY=...
+S3_SECRET_KEY=...
+```
+
+> The `DATABASE_URL` must use `truancy-postgres-svc` (the Kubernetes service name), not `localhost`.
+
+### Seed the Kubernetes database
 
 ```bash
-npm install
+# 1. Port-forward the Postgres service
+kubectl -n truancy-cloud port-forward svc/truancy-postgres-svc 5433:5432
+
+# 2. In a new terminal, point Prisma at the forwarded port
+export DATABASE_URL="postgresql://postgres:truancyCloud@127.0.0.1:5433/mydb?schema=public"
+
+# 3. Run migrations and seed
+npx prisma migrate deploy
+npx prisma db seed
+
+# 4. Restart the web pod to pick up fresh data
+kubectl -n truancy-cloud rollout restart deployment truancy-web
 ```
 
-### 3. Create a new branch (Please don’t work on main)
-
-Before making any changes, create and switch to a new branch:
+### Useful kubectl commands
 
 ```bash
-git checkout -b your-branch-name
-```
-To confirm your current branch:
-
-```bash
-git branch
-```
-
-### 4. Start a local PostgreSQL database:
-
-Run the following command to start a Postgres container:
-   ```bash
-   docker run --name truancy-postgres \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=truancycloud \
-  -e POSTGRES_DB=mydb \
-  -p 5433:5432 \
-  -d postgres:15
-   ```
-This will:
-
-- create a database named mydb
-- run on port 5433
-- use username postgres
-- use password truancycloud
-
-
-
-### 5. Set environment variables (.env)
-
-In the root of the project, create a file named .env and add:
-
-```bash
-DATABASE_URL=postgresql://postgres:truancycloud@127.0.0.1:5433/mydb?schema=public
-NEXTAUTH_SECRET=your-random-secret
-NEXTAUTH_URL=http://localhost:3000
-```
-
-### 6. Run database migrations:
-   
-   ```bash
-   npx prisma migrate deploy
-   ```
-- This creates all required tables in the database.
-
-### 7. Seed the database with demo data:
-   
-   ```bash
-   npx prisma db seed
-   ````
-
-This will create:
-
-- demo users
-- counties
-- schools
-
-### 8. Start the development server:
-   
-   ```bash
-   npm run dev
-   ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-### 9. Pushing Your Branch
-
-After making changes:
-
-```bash
-git add .
-git commit -m "your message"
-```
-
-Then:
-
-First push of a new branch:
-
-```bash
-git push -u origin your-branch-name
-```
-
-After that, for the SAME branch, future pushes are just:
-
-```bash
-git push
-```
-
-### 10. Create a Pull Request (PR) on GitHub
-
-- Go to GitHub
-
-- Click Pull requests tab → New pull request
-
-- Base branch: main
-
-- Compare branch: your-branch-name
-
-- Click **Create pull request**
-
-## After PR merged: update your local main
-
-```bash
-git checkout main
-git pull origin main
-```
-
-Now you’re synced.
-
----
-
-## Test Suite
-
-### Automated
-
-- **Vitest**
-- RBAC validation
-- API response testing
-
-
-### Manual Testing
-
-- Login as each role:
-  - Admin
-  - Court
-  - School
-
-- Upload PDFs:
-  - Valid file
-  - Invalid file
-
-- Process reports
-
-- Verify:
-  - Status changes (PENDING → PROCESSING → PARSED/FAILED)
-  - Truancy calculations
-
-- Retry failed uploads
-
----
-
-## Unique Aspects / Pitfalls
-
-### PDF Parsing Constraints
-
-- The system currently supports a specific attendance report format (ProgressBook)
-- Variations in PDF structure (spacing, formatting) may cause parsing failures
-- Parsing logic relies on pattern matching and may require updates for new formats
-
----
-
-### Cumulative Data Model
-
-- Attendance data is treated as **year-to-date snapshots**
-- Re-uploading a report overwrites previous records for that student and school year
-- The system does not yet support true historical tracking or time-series analysis
-
----
-
-### RBAC Enforcement Complexity
-
-- Role-based access control must be enforced consistently across:
-  - UI (page access)
-  - API routes
-  - Database queries
-- Improper enforcement can lead to data leakage across schools or counties
-
----
-
-### File Storage (Ceph S3)
-
-- Files are stored in an S3-compatible object storage (Ceph)
-- Requires correct environment configuration
-- Missing or incorrect credentials will break upload and retrieval functionality
-
----
-
-# Common Issues / Debugging
-
-- Login fails in production  
-  → Ensure NEXTAUTH_SECRET and NEXTAUTH_URL are set in the web deployment
-
-- App cannot connect to database  
-  → Ensure DATABASE_URL uses:
-    truancy-postgres-svc (NOT localhost)
-
-- Public URL not loading  
-  → Check ingress:
-    kubectl -n truancy-cloud get ingress
-
-- Seeded users not working  
-  → Ensure database was seeded against the Kubernetes DB (not local)
-
-- Uploads failing  
-  → Check S3 environment variables
-  
-- Docker container conflicts (e.g., PostgreSQL already running)
-- Missing or incorrect `.env` variables
-- Cached images in Kubernetes deployments (old versions running)
-- Failed uploads due to invalid file format or size limits
-- If the public site loads but login fails, verify the `truancy-web` deployment includes `NEXTAUTH_SECRET` and `NEXTAUTH_URL`.
-
-### Check pods
+# Check pod status
 kubectl -n truancy-cloud get pods
 
-### Check logs
-kubectl -n truancy-cloud logs deployment/truancy-web --tail=100
+# Stream web logs
+kubectl -n truancy-cloud logs deployment/truancy-web --tail=100 -f
 
-### Check ingress
+# Check ingress
 kubectl -n truancy-cloud get ingress
 kubectl -n truancy-cloud describe ingress truancy-web-ingress
 
-### Check services
-kubectl -n truancy-cloud get svc
-
-### Restart web deployment
-kubectl -n truancy-cloud rollout restart deployment truancy-web
-
-### Check environment variables
+# Check env vars on the deployment
 kubectl -n truancy-cloud get deployment truancy-web -o yaml
 
-## Learn More
+# Restart web pod
+kubectl -n truancy-cloud rollout restart deployment truancy-web
+```
 
-To learn more about Next.js, take a look at the following resources:
+### NRP resource expiry
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- Auth.js / NextAuth Documentation (https://authjs.dev/)
-- Prisma Documentation (https://www.prisma.io/docs)
+NRP resources may expire after ~2 weeks of inactivity. If pods disappear, redeploy with the manifests above and reseed the database. The PVC must exist for Postgres data to persist across restarts.
+
+---
+
+## Post-Deploy Checklist
+
+- [ ] `kubectl -n truancy-cloud get pods` — Postgres + web pods both `Running`
+- [ ] Public URL loads: `https://truancy-cloud-demo.nrp-nautilus.io`
+- [ ] Login works with `admin@secondbell.dev` / `password123`
+- [ ] Court user can view and process uploads
+- [ ] School user can upload a PDF
+- [ ] Student list loads with risk badges
+- [ ] Generate Letter downloads a PDF
+
+---
+
+## Demo Access
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | `admin@secondbell.dev` | `password123` |
+| Court (Champaign) | `champaign_court@secondbell.dev` | `password123` |
+| Court (Clark) | `clark_court@secondbell.dev` | `password123` |
+| School (Urbana) | `urbana_school@secondbell.dev` | `password123` |
+| School (Graham) | `graham_school@secondbell.dev` | `password123` |
+| School (Springfield) | `springfield_school@secondbell.dev` | `password123` |
+
+---
+
+## Common Issues
+
+**Login fails in production**
+→ Ensure `NEXTAUTH_SECRET` and `NEXTAUTH_URL` are set on the web deployment.
+
+**App cannot connect to database**
+→ In Kubernetes, `DATABASE_URL` must use `truancy-postgres-svc`, not `localhost`.
+
+**Uploads fail**
+→ Check all five S3 environment variables are set correctly on the deployment.
+
+**`Module not found: Can't resolve '@radix-ui/react-slot'`**
+→ Run `npm install`. The package is in `package.json` but wasn't installed locally.
+
+**`npx prisma generate` errors after pulling**
+→ A teammate may have added migrations. Run `npx prisma migrate deploy && npx prisma generate`.
+
+**Public URL not loading**
+→ Check ingress: `kubectl -n truancy-cloud get ingress`
+
+**Seeded users not working**
+→ Verify the seed was run against the Kubernetes database (via port-forward), not local.
+
+**PDF generation fails in dev**
+→ `@react-pdf/renderer` requires the Node.js runtime. Ensure `export const runtime = "nodejs"` is set on the notice route.
