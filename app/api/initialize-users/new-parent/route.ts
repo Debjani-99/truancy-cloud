@@ -21,17 +21,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Must provide student ID for new parent account" }, { status: 400 });
   }
 
-  if (isNaN(sid)) {
-    return NextResponse.json({ error: "Invalid Student ID" }, { status: 400 });
-  }
+  //if (isNaN(sid)) {
+    //return NextResponse.json({ error: "Invalid Student ID" }, { status: 400 });
+  //}
 
 
   
   if (studentId) {
-    const student = await prisma.student.findUnique({
-      where: { id: sid },
+    const student = await prisma.student.findFirst({
+      where: { studentRef: studentId },
       include: { user: true },
     });
+
+    const parent = await prisma.user.findFirst({
+      where: {studentId: Number(studentId)}
+    })
+
+    if (parent){
+      return NextResponse.json({ error: "This student already has a parent assigned" }, { status: 405 });
+    }
 
     if (!student) {
       return NextResponse.json({ error: "Student not found" }, { status: 405 });
@@ -48,7 +56,8 @@ export async function POST(req: Request) {
 
 
   
-  const tempcode = crypto.randomInt(100000, 999999).toString()
+  //const tempcode = crypto.randomInt(100000, 999999).toString()
+  const tempcode = "password123"
   const hashed = await bcrypt.hash(tempcode, 10);
 
   const newUser = await prisma.user.create({

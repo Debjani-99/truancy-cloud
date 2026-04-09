@@ -7,7 +7,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import Footer from "@/app/components/Footer";
 
-type Role = "SCHOOL" | "COURT" | "ADMIN";
+type Role = "SCHOOL" | "COURT" | "ADMIN" | "PARENT";
 
 type School = {
   id: string;
@@ -173,6 +173,7 @@ export default function DashboardPage() {
     if (!session || !role) return "";
     if (role === "COURT") return `County: ${scopeName ?? "Loading county..."}`;
     if (role === "SCHOOL") return `School: ${scopeName ?? "Loading school..."}`;
+    if (role === "PARENT") return ``;
     return "Scope: Admin (all)";
   }, [session, role, scopeName]);
 
@@ -443,6 +444,7 @@ export default function DashboardPage() {
                 {role ? role.toLowerCase() : ""} User
               </p>
             </div>
+            {(role !== "PARENT") && (
             <button
                 onClick={() => router.push("create-user")}
                 className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-gray-800"
@@ -457,6 +459,7 @@ export default function DashboardPage() {
               </svg>
               Create New Account
             </button>
+            )}
             <button
               onClick={() => router.push("settings/change-password")}
               className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
@@ -506,11 +509,13 @@ export default function DashboardPage() {
               <h2 className="mt-1 text-3xl font-bold text-gray-900">
                 {displayName}
               </h2>
+              {(role !== "PARENT") && (
               <p className="mt-2 text-gray-600">
                 {role === "COURT"
                   ? "Review attendance reports from schools in your county"
                   : "Manage all system resources and users"}
               </p>
+              )}
             </div>
             <div className="hidden h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white lg:flex">
               <svg
@@ -668,6 +673,35 @@ export default function DashboardPage() {
                 }
               />
             </div>
+          </>
+        )}
+
+        {/* PARENT view */}
+        {role === "PARENT" && (
+          <>
+            
+            <Card
+                title="Attendance Record"
+                subtitle="View your student's attendance"
+                onClick={() => router.push("/login")}
+                icon={
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16l3-1m-3 1l-3-1"
+                    />
+                  </svg>
+                }
+              />
+
+            
           </>
         )}
       </section>

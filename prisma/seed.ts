@@ -8,7 +8,7 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const passwordHash = await bcrypt.hash("password123", 10);
-
+  console.log("Seeding DB:", process.env.DATABASE_URL)
   // Seed counties
   const champaign = await prisma.county.upsert({
     where: { name: "Champaign County" },
@@ -158,6 +158,23 @@ async function main() {
   //  },  
  // });
 
+  const student = await prisma.student.upsert({
+  where: {
+    // composite unique constraint
+    schoolId_studentRef: {
+      schoolId: springfield.id,
+      studentRef: "118678",
+    },
+  },
+  update: {},
+  create: {
+    firstName: "test",
+    lastName: "test",
+    studentRef: "118678",
+    schoolId: urbana.id,
+  },
+});
+
   // Seed parent user with account setup
   await prisma.user.upsert({
     where: { email: "parentaccount@secondbell.dev" },
@@ -168,10 +185,29 @@ async function main() {
       email: "parentaccount@secondbell.dev",
       passwordHash,
       role: "PARENT",
-      firstTimeUser: false,
-      //studentId: 
+      firstTimeUser: true,
+      studentId: student.id,
     },  
   });
+  await prisma.user.upsert({
+    where: { email: "parentaccount@secondbell.dev" },
+    update: {
+    studentId: student.id,
+    firstTimeUser: false,
+    needsPasswordReset: true,
+    },
+    create: {
+      firstName: "Parent",
+      lastName: "Account",
+      email: "parentaccount@secondbell.dev",
+      passwordHash,
+      role: "PARENT",
+      firstTimeUser: true,
+      studentId: student.id,
+    },
+});
+
+
 
   console.log("Seed complete:");
   console.log("  Counties: Champaign County, Clark County");
